@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "motion/react";
+import { Select } from "@/components/select";
 import {
   ISLAND_SLOTS,
   MAIN_PRESETS,
@@ -540,8 +541,6 @@ export function IslandsWidget({ value, onChange, types, disabled }: { value: unk
     else groups.push({ name: s.group, slots: [s] });
   });
 
-  const select = `${input} h-8 appearance-none text-[12.5px]`;
-
   return (
     <div className="space-y-3">
       {elements.length === 0 ? (
@@ -575,30 +574,33 @@ export function IslandsWidget({ value, onChange, types, disabled }: { value: unk
                       {complete ? <Tick /> : null}
                     </div>
                     <div className="space-y-1.5">
-                      <select className={select} value={i.element ?? ""} disabled={disabled} onChange={(e) => set(s.id, { element: e.target.value || undefined })} aria-label="Element">
-                        <option value="">Element…</option>
-                        {elements.map((t) => (
-                          <option key={t} value={t}>
-                            {t}
-                            {used.includes(t) && i.element !== t ? " (used)" : ""}
-                          </option>
-                        ))}
-                      </select>
+                      <Select
+                        label="Element"
+                        placeholder="Element…"
+                        value={i.element}
+                        disabled={disabled}
+                        onChange={(v) => set(s.id, { element: v })}
+                        items={elements.map((t) => ({ value: t, label: t, hint: used.includes(t) && i.element !== t ? "used" : undefined }))}
+                      />
                       <input className={`${input} h-8 text-[12.5px]`} value={i.biome ?? ""} disabled={disabled} onChange={(e) => set(s.id, { biome: e.target.value })} placeholder="Biome, e.g. reef shallows" aria-label="Biome" />
                       <input className={`${input} h-8 text-[12.5px]`} value={i.inspiration ?? ""} disabled={disabled} onChange={(e) => set(s.id, { inspiration: e.target.value })} placeholder="Inspiration (bonus)" aria-label="Inspiration" />
                       <div className="grid grid-cols-2 gap-1.5">
-                        <select className={select} value={i.stone ?? ""} disabled={disabled} onChange={(e) => set(s.id, { stone: e.target.value || undefined })} aria-label="Stone relationship">
-                          <option value="">Stone…</option>
-                          {STONE_RELATIONS.map((r) => (
-                            <option key={r}>{r}</option>
-                          ))}
-                        </select>
-                        <select className={select} value={i.mons ?? ""} disabled={disabled} onChange={(e) => set(s.id, { mons: e.target.value || undefined })} aria-label="Mons relationship">
-                          <option value="">Mons…</option>
-                          {MONS_RELATIONS.map((r) => (
-                            <option key={r}>{r}</option>
-                          ))}
-                        </select>
+                        <Select
+                          label="Stone relationship"
+                          placeholder="Stone…"
+                          value={i.stone}
+                          disabled={disabled}
+                          onChange={(v) => set(s.id, { stone: v })}
+                          items={STONE_RELATIONS.map((r) => ({ value: r, label: r }))}
+                        />
+                        <Select
+                          label="Mons relationship"
+                          placeholder="Mons…"
+                          value={i.mons}
+                          disabled={disabled}
+                          onChange={(v) => set(s.id, { mons: v })}
+                          items={MONS_RELATIONS.map((r) => ({ value: r, label: r }))}
+                        />
                       </div>
                     </div>
                   </div>
