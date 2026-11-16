@@ -128,3 +128,8 @@ Decisions locked in with the Bible Quest tracker.
   - Tone rules (Default) › *The seriousness lands through creatures. The stolen starter's forced form is the moment…*: **Change**. Shouln't be stop smiling forever of course. its a moment to take it in but darker tones should be understood from the jump but not pushed you know. Like the real world. Thats just how things are.
   - Tone rules (Default) › *Nobody is evil for fun. The heir is grieving and certain. His crew believe him.*: **Change**. Sometimes there are just assholes.
   - 7. The rival (Default) › *The guilt makes them want a shortcut. Mid-game the heir's offer tempts them, and they s…*: **Change**. IDK
+- 2026-11-15. **Pick the type list**: 12 main types, 8 secondary.
+  - Main: Plant, Ground, Air, Ice, Poison, Metal, Water, Fire, Lightning, Spore, Crystal, Star
+  - Island elements: Plant, Air, Ice, Water, Fire, Lightning, Spore, Crystal, Star, Metal, Poison, Ground
+  - Secondary: Dark (Deep water, caves, night); Flying (Cliffs, peaks, open sky); Fighting (Contested ground, rivals, duels); Spirit (Old places, ruins, the wound); Bug (Swarms, undergrowth, rot); Light (Wherever the sun hits the most, or maybe we can also take this into the technology route for 1 lineage. that could be cool.); Hearth (Towns, farms, harbours, wherever people settle); Relic (Sealed-off places that haven’t changed: lagoons, crater floors, old growth, abandoned places)
+  - Written to `world/types.md`

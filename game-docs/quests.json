@@ -134,7 +134,7 @@
       "context": [
         "11-story.md?match=Default"
       ],
-      "answer": "Overall awakening rules are good\nWe need a little more cast, I want this world to feel ALIVE, let's add RDr2 to our concepts for reference.\neverything else is good\n- Tone rules (Default) \u203a *The characters joke; the world doesn't. Mum, the rival, townsfolk and the creatures' pe\u2026*: **Note**. We don't need to try too hard with humor. Maybe we can try some jokes and see how it feels.\n- Tone rules (Default) \u203a *Show the serious side, don't announce it. A keeper who guards a stone and can't remembe\u2026*: **Note**. Very important we show rather than tell. Story-telling 101\n- Tone rules (Default) \u203a *The seriousness lands through creatures. The stolen starter's forced form is the moment\u2026*: **Change**. Shouln't be stop smiling forever of course. its a moment to take it in but darker tones should be understood from the jump but not pushed you know. Like the real world. Thats just how things are.\n- Tone rules (Default) \u203a *Nobody is evil for fun. The heir is grieving and certain. His crew believe him.*: **Change**. Sometimes there are just assholes.\n- 7. The rival (Default) \u203a *The guilt makes them want a shortcut. Mid-game the heir's offer tempts them, and they s\u2026*: **Change**. IDK",
+      "answer": "Overall awakening rules are good\nWe need a little more cast, I want this world to feel ALIVE, let's add RDr2 to our concepts for reference.\neverything else is good\n- Tone rules (Default) › *The characters joke; the world doesn't. Mum, the rival, townsfolk and the creatures' pe…*: **Note**. We don't need to try too hard with humor. Maybe we can try some jokes and see how it feels.\n- Tone rules (Default) › *Show the serious side, don't announce it. A keeper who guards a stone and can't remembe…*: **Note**. Very important we show rather than tell. Story-telling 101\n- Tone rules (Default) › *The seriousness lands through creatures. The stolen starter's forced form is the moment…*: **Change**. Shouln't be stop smiling forever of course. its a moment to take it in but darker tones should be understood from the jump but not pushed you know. Like the real world. Thats just how things are.\n- Tone rules (Default) › *Nobody is evil for fun. The heir is grieving and certain. His crew believe him.*: **Change**. Sometimes there are just assholes.\n- 7. The rival (Default) › *The guilt makes them want a shortcut. Mid-game the heir's offer tempts them, and they s…*: **Change**. IDK",
       "doneAt": "2026-11-16T02:49:31.220Z",
       "widget": {
         "type": "review"
@@ -147,7 +147,7 @@
       "xp": 100,
       "kind": "decision",
       "prompt": "Split the types in two. Main types are real-world elements a mon absorbs. Secondary types come from where it lives inside its biome. Then mark the 12 mains that get an island.",
-      "status": "open",
+      "status": "done",
       "context": [
         "11-story.md#What the rule explains",
         "03-world-and-maps.md#Biomes",
@@ -157,7 +157,10 @@
       "widget": {
         "type": "types"
       },
-      "output": "world/types.md"
+      "output": "world/types.md",
+      "answer": "12 main types, 8 secondary.\n- Main: Plant, Ground, Air, Ice, Poison, Metal, Water, Fire, Lightning, Spore, Crystal, Star\n- Island elements: Plant, Air, Ice, Water, Fire, Lightning, Spore, Crystal, Star, Metal, Poison, Ground\n- Secondary: Dark (Deep water, caves, night); Flying (Cliffs, peaks, open sky); Fighting (Contested ground, rivals, duels); Spirit (Old places, ruins, the wound); Bug (Swarms, undergrowth, rot); Light (Wherever the sun hits the most, or maybe we can also take this into the technology route for 1 lineage. that could be cool.); Hearth (Towns, farms, harbours, wherever people settle); Relic (Sealed-off places that haven’t changed: lagoons, crater floors, old growth, abandoned places)\n- Written to `world/types.md`",
+      "doneAt": "2026-11-16T03:47:07.727Z",
+      "bonusXp": 25
     },
     {
       "id": "type-chart",
@@ -232,7 +235,7 @@
                 "label": "Mediterranean islands"
               },
               {
-                "label": "Gal\u00e1pagos"
+                "label": "Galápagos"
               }
             ]
           },
@@ -394,7 +397,7 @@
             "label": "What does the wound look like on other islands because of it?",
             "type": "text",
             "lines": 2,
-            "placeholder": "Ash drifting, reefs bleaching\u2026"
+            "placeholder": "Ash drifting, reefs bleaching…"
           },
           {
             "id": "species",
