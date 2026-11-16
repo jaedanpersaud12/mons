@@ -25,8 +25,9 @@ npx vercel link --yes --project bible-quest
 
 echo "→ Setting production environment variables"
 for name in DATABASE_URL NEON_REALTIME_URL NEON_REALTIME_SECRET APP_PASSCODE; do
-  npx vercel env rm "$name" production --yes >/dev/null 2>&1 || true
-  printf '%s' "${!name}" | npx vercel env add "$name" production >/dev/null
+  val=$(grep -m1 "^$name=" .env.local | cut -d= -f2-)
+  [ -n "$val" ] || { echo "  $name missing from .env.local"; exit 1; }
+  npx vercel env add "$name" --environment production --value "$val" --force --yes >/dev/null
   echo "  $name ✓"
 done
 
