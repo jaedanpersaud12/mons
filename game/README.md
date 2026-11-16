@@ -1,6 +1,6 @@
-# Splat port test (Godot 4.6)
+# The game (Godot 4.6)
 
-One question: can the pixel-art splat look from the browser build be reproduced in Godot, and how fast does it run?
+This started as a port test with one question: can the pixel-art splat look from the browser build be reproduced in Godot, and how fast does it run? It is now the game.
 
 This scene has the Test Meadow's ground, grass, trees and lake, the player (walk, run, jump, idle), the bull calf, and the pixel pass.
 
@@ -11,6 +11,14 @@ This scene has the Test Meadow's ground, grass, trees and lake, the player (walk
 3. Press Play (F5).
 
 The project uses the **Compatibility** renderer.
+
+## Run it without Godot
+
+`build\Mons.exe` is a single-file Windows build. It is not committed (it is about 150 MB), so it only exists where it has been built or copied.
+
+To rebuild it after a change, double-click `build_windows.bat`. That needs Godot 4.6 with its export templates installed; the script's first lines say how to point it at Godot. The export settings are in `export_presets.cfg`.
+
+Windows will warn about an unknown publisher the first time, because the file is not signed. Choose **More info**, then **Run anyway**.
 
 ## Controls
 
@@ -25,6 +33,9 @@ The project uses the **Compatibility** renderer.
 | G | Auto detail on or off |
 | B | Soft blend or opaque splats |
 | P | Palette on or off |
+| 3 | New water or the old flat water |
+| 4 | Caustics on or off |
+| 5 | Foam and glints on or off |
 
 The top-left readout shows frame rate, frame time, detail, blend mode, splats drawn and draw calls.
 
@@ -53,6 +64,23 @@ The top-left readout shows frame rate, frame time, detail, blend mode, splats dr
 
 **The calf and the player** each use 16 bone matrices passed to the shader. Every splat belongs to one bone and blends toward that bone's parent, so joints bend.
 
+## Water
+
+The lake is drawn by the same splats as everything else. Each water splat stores the colour of the lakebed under it and the depth there, and the shader works out what that looks like through the water.
+
+| Part | What it does |
+|---|---|
+| Depth colour | Red light is absorbed first, so pale sand turns turquoise in the shallows and deep blue in the hole |
+| Lakebed | Sand at the shore, then rock, weed and a few corals, visible through shallow water |
+| Caustics | Moving light lines on the bed, fading with depth |
+| Foam | A solid line where the water meets the sand and a broken one behind it. The waterline moves in and out, leaving wet sand |
+| Glints | A few splats flash white along the bright bands |
+| Wading | Rings spread from the player while standing in water |
+
+The water code is the `g == 5.0` block in `shaders/splat.gdshaderinc`. `tools/bake_water.py` is the one-off script that rewrote the lake's splats, dug the deep hole and refitted the palette; it has already been run on the data in this folder.
+
+Not there yet: reflections, a sky to reflect, waves that move the surface, splashes, and anything for the open sea.
+
 ## Data (`data/`)
 
 Exported from the browser build.
@@ -60,13 +88,13 @@ Exported from the browser build.
 | File | Contents |
 |---|---|
 | `world_pos.bin` | Splat positions, three floats each |
-| `world_col.bin` | Colour and glow flag, four bytes each |
-| `world_misc.bin` | Sway, group, size, phase, four bytes each |
+| `world_col.bin` | Colour and glow flag, four bytes each. For water splats the colour is the lakebed's |
+| `world_misc.bin` | Sway, group, size, phase, four bytes each. For water splats the sway slot holds depth |
 | `world_nrm.bin` | Facing direction and shape code, four signed bytes each |
 | `world.json` | Map cells, palette, ground height grid, water level |
 | `calf.bin`, `calf.json` | The calf's splats, bones and joint positions |
 | `hero.bin`, `hero.json` | The player's splats, bones, joint positions and bone parents |
-| `palette.json` | 28 colours fitted to the world and the characters together |
+| `palette.json` | 28 colours fitted to the world, the characters and the water together |
 
 ## Known gaps
 
