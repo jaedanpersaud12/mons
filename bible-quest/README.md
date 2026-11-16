@@ -111,3 +111,19 @@ Auth: `MCP_TOKEN` (falls back to `APP_PASSCODE`), sent as `Authorization: Bearer
 
 - Claude Code: `claude mcp add --transport http bible https://<url>/api/mcp --header "Authorization: Bearer <token>"`
 - claude.ai: Settings → Connectors → Add custom connector → `https://<url>/api/mcp?key=<token>`
+
+## Live UI: change a quest's interface without deploying
+
+A quest's tool can be drawn by code kept in the database instead of code in this repo. Save new source through the MCP server and every open copy of the app swaps it in within a second or two.
+
+- **Where it lives:** one entry per UI under `code-<id>` in the `kv` table (or `game-docs/code-<id>.json` in files mode), with up to 30 versions.
+- **How it runs:** inside a sandboxed iframe with no network, no cookies and no access to the app. It can only draw and call `save()`. Source is plain JavaScript using [htm](https://github.com/developit/htm) on Preact, so there is no build step.
+- **What it can replace:** on a quest with a built-in tool it swaps the interface only; the data shape, objectives and generated doc stay as coded in `lib/widgets.ts`. On a quest with no tool it becomes a `custom` tool and supplies its own objectives through a `meta` function.
+- **When it breaks:** code that does not parse is refused at save. A runtime crash shows an error card with "Roll back" and "Use the built-in tool". Answers are never held by the code, so nothing is lost.
+- **In the quest:** a "Live UI" bar shows the version and who saved it, with a version picker and a switch back to the built-in tool.
+
+MCP tools: `ui_guide` (read first), `list_ui_code`, `get_ui_code`, `save_ui_code`, `rollback_ui_code`, `attach_ui_code`.
+
+`ui/island-board.js` is the first one and ships with the app as v0. After editing anything in `ui/` or `ui-runtime/`, run `node scripts/build-ui.mjs` to regenerate `lib/ui-seeds.ts` and `lib/vendor/`.
+
+Anyone holding the MCP token can change what these quests look like, so treat it like a password.

@@ -10,8 +10,9 @@ import { AnnotatedMd } from "@/components/annotated-md";
 import { ProgressBar } from "@/components/interior/progress-bar";
 import { useLive } from "@/lib/live";
 import { ChartWidget, FieldsWidget, IslandsWidget, TypesWidget } from "@/components/widgets";
+import { LiveWidget } from "@/components/live-widget";
 import { LAYERS, VERDICTS, composeAnswer, type QuestNote, type QuestView } from "@/lib/game";
-import { BONUS_XP, asTypes, objectivesFor, widgetAnswer, widgetOutput, type Ctx, type Objective } from "@/lib/widgets";
+import { BONUS_XP, ISLAND_SLOTS, STARTER_ELEMENTS, asTypes, mainsOf, objectivesFor, widgetAnswer, widgetOutput, type Ctx, type Objective } from "@/lib/widgets";
 import type { ContextSection } from "@/lib/sections";
 
 type SaveState = "idle" | "loading" | "unsaved" | "saving" | "saved" | "conflict" | "error";
@@ -250,6 +251,31 @@ export function QuestWorkspace({
   const bonus = objectives.filter((o) => o.bonus && o.done).length * BONUS_XP;
   const nextUp = required.find((o) => !o.done);
 
+  const builtinTool = !widget ? null : widget.type === "fields" ? (
+    <FieldsWidget fields={widget.fields} value={data} onChange={setData} types={types} disabled={q?.status === "done" || locked} />
+  ) : widget.type === "types" ? (
+    <TypesWidget value={data} onChange={setData} disabled={q?.status === "done" || locked} />
+  ) : widget.type === "chart" ? (
+    <ChartWidget value={data} onChange={setData} types={types} disabled={q?.status === "done" || locked} />
+  ) : widget.type === "islands" ? (
+    <IslandsWidget value={data} onChange={setData} types={types} disabled={q?.status === "done" || locked} />
+  ) : null;
+  // What a live UI is told about the quest. It runs sandboxed, so this is all it can see.
+  const liveCtx = useMemo(() => {
+    const mains = mainsOf(types);
+    const live = types.sources.filter((s) => mains.includes(s));
+    return {
+      quest: { id: q?.id, title: q?.title, prompt: q?.prompt },
+      disabled: q?.status === "done" || locked,
+      mains,
+      secondaries: types.types.filter((t) => types.secondary.includes(t)),
+      elements: live.length ? live : mains,
+      starters: STARTER_ELEMENTS,
+      slots: ISLAND_SLOTS,
+      fields: widget?.type === "fields" ? widget.fields : undefined,
+    };
+  }, [types, q?.id, q?.title, q?.prompt, q?.status, locked, widget]);
+
   const layer = q ? LAYERS.find((l) => l.id === q.layer) : null;
   const done = q?.status === "done";
   const canLock = !!q && !done && !locked && !nextUp;
@@ -363,15 +389,11 @@ export function QuestWorkspace({
 
             <div ref={readerRef} className="scroller min-h-0 flex-1 overflow-y-auto px-8 py-6">
               {view === "work" && widget ? (
-                widget.type === "fields" ? (
-                  <FieldsWidget fields={widget.fields} value={data} onChange={setData} types={types} disabled={done || locked} />
-                ) : widget.type === "types" ? (
-                  <TypesWidget value={data} onChange={setData} disabled={done || locked} />
-                ) : widget.type === "chart" ? (
-                  <ChartWidget value={data} onChange={setData} types={types} disabled={done || locked} />
-                ) : widget.type === "islands" ? (
-                  <IslandsWidget value={data} onChange={setData} types={types} disabled={done || locked} />
-                ) : null
+                widget.code ? (
+                  <LiveWidget codeId={widget.code} value={data} onChange={setData} ctx={liveCtx} fallback={builtinTool} custom={widget.type === "custom"} />
+                ) : (
+                  builtinTool
+                )
               ) : view === "sheet" ? (
                 <MdView markdown={sheet.text} className="compact" />
               ) : (

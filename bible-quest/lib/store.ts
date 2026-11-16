@@ -143,3 +143,19 @@ export async function updateQuest(id: string, patch: Partial<Pick<Quest, "title"
   await write(data, by);
   return quest;
 }
+
+/** Points a quest at a live UI (see lib/code-store.ts), or back at its built-in tool with code=null. */
+export async function setQuestCode(id: string, code: string | null, by?: string) {
+  const data = await read();
+  const quest = data.quests.find((q) => q.id === id);
+  if (!quest) throw new Error("Unknown quest");
+  if (code) {
+    if (quest.kind === "sheet" && !quest.widget) throw new Error("Sheet quests are written in the editor and cannot take a live UI");
+    quest.widget = !quest.widget || quest.widget.type === "review" ? { type: "custom", code } : { ...quest.widget, code };
+  } else if (quest.widget) {
+    if (quest.widget.type === "custom") quest.widget = { type: "review" };
+    else delete quest.widget.code;
+  }
+  await write(data, by);
+  return quest;
+}

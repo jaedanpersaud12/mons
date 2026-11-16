@@ -1,15 +1,19 @@
 import { createMcpHandler } from "mcp-handler";
 import { registerBibleTools } from "@/lib/mcp-tools";
+import { registerCodeTools } from "@/lib/mcp-code-tools";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const handler = createMcpHandler(
-  (server) => registerBibleTools(server),
+  (server) => {
+    registerBibleTools(server);
+    registerCodeTools(server);
+  },
   {
-    serverInfo: { name: "bible-quest", version: "0.2.0" },
+    serverInfo: { name: "bible-quest", version: "0.3.0" },
     instructions:
-      "This is the game bible for Jaedan's creature RPG (tropical island chain, 12 awakenings, a lost bond). Call bible_overview first. Work one decision at a time with Jaedan: propose, let him choose, then write. Only lock_quest once he has agreed.",
+      "This is the game bible for Jaedan's creature RPG (tropical island chain, 12 awakenings, a lost bond). Call bible_overview first. Work one decision at a time with Jaedan: propose, let him choose, then write. Only lock_quest once he has agreed. The interface of a quest can be changed live, with no deploy, through the *_ui_code tools: read ui_guide first.",
   },
 );
 

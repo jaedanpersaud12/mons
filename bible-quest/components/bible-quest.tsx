@@ -22,7 +22,7 @@ import {
   type QuestView,
 } from "@/lib/game";
 
-const WIDGET_LABEL = { fields: "Choices", types: "Type picker", chart: "Chart", islands: "Island board", review: "Review" } as const;
+const WIDGET_LABEL = { fields: "Choices", types: "Type picker", chart: "Chart", islands: "Island board", review: "Review", custom: "Live tool" } as const;
 
 type Filter = "open" | "done" | "all";
 type Toast = { id: number; text: string; big?: boolean };
@@ -452,7 +452,7 @@ function QuestRow({
         {quest.title}
       </span>
       <span className="hidden rounded-[6px] bg-white/[0.04] px-2 py-0.5 text-[11px] text-stone-400 sm:inline">
-        {quest.widget ? WIDGET_LABEL[quest.widget.type] : quest.kind === "sheet" ? "Sheet" : "Decision"}
+        {quest.widget ? `${WIDGET_LABEL[quest.widget.type]}${quest.widget.code && quest.widget.type !== "custom" ? " · live" : ""}` : quest.kind === "sheet" ? "Sheet" : "Decision"}
       </span>
       <span
         className={`w-16 shrink-0 text-right font-mono text-[12px] tabular-nums ${
