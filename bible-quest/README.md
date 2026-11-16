@@ -41,6 +41,10 @@ See `.env.example`. On Vercel, set all four:
 | `NEON_REALTIME_SECRET` | Same page, "Copy secret". Server only, never in the browser |
 | `APP_PASSCODE` | The passcode for the site. Anyone with the URL can't get in without it |
 
+### First deploy from the command line
+
+With the Vercel CLI logged in and `.env.local` filled in, run `bash scripts/vercel-setup.sh` from `bible-quest/`. It seeds the database from `../game-docs`, links a Vercel project called `bible-quest`, copies the variables into Vercel and deploys. After that, `npx vercel deploy --prod` redeploys.
+
 ### Moving data in and out
 
 - `npm run db:seed` copies `../game-docs` into the database. It refuses to overwrite a database that already has quests unless you add `-- --force`.
