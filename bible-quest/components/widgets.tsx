@@ -565,14 +565,16 @@ export function IslandsWidget({ value, onChange, types, disabled }: { value: unk
                 const complete = islandDone(s, i);
                 const starterOnly = s.group === "Tier 1";
                 const picks = starterOnly ? elements.filter((t) => STARTER_ELEMENTS.includes(t)) : elements;
-                const monsSelect = (
-                  <Select
-                    label="Mons relationship"
-                    placeholder="Mons…"
-                    value={i.mons}
+                const area = `${input} h-auto resize-none py-1.5 text-[12.5px] leading-snug`;
+                const monsField = (
+                  <textarea
+                    className={area}
+                    rows={5}
+                    value={i.mons ?? ""}
                     disabled={disabled}
-                    onChange={(v) => set(s.id, { mons: v })}
-                    items={MONS_RELATIONS.map((r) => ({ value: r, label: r }))}
+                    onChange={(e) => set(s.id, { mons: e.target.value })}
+                    placeholder={`Its mons: what people say, what they do. Lenses: ${MONS_RELATIONS.join(", ").toLowerCase()}`}
+                    aria-label="How people here treat the mons"
                   />
                 );
                 return (
@@ -609,21 +611,18 @@ export function IslandsWidget({ value, onChange, types, disabled }: { value: unk
                       )}
                       <input className={`${input} h-8 text-[12.5px]`} value={i.biome ?? ""} disabled={disabled} onChange={(e) => set(s.id, { biome: e.target.value })} placeholder="Biome, e.g. reef shallows" aria-label="Biome" />
                       <input className={`${input} h-8 text-[12.5px]`} value={i.inspiration ?? ""} disabled={disabled} onChange={(e) => set(s.id, { inspiration: e.target.value })} placeholder="Inspiration (bonus)" aria-label="Inspiration" />
-                      {s.noStone ? (
-                        monsSelect
-                      ) : (
-                        <div className="grid grid-cols-2 gap-1.5">
-                          <Select
-                            label="Stone relationship"
-                            placeholder="Stone…"
-                            value={i.stone}
-                            disabled={disabled}
-                            onChange={(v) => set(s.id, { stone: v })}
-                            items={STONE_RELATIONS.map((r) => ({ value: r, label: r }))}
-                          />
-                          {monsSelect}
-                        </div>
+                      {s.noStone ? null : (
+                        <textarea
+                          className={area}
+                          rows={5}
+                          value={i.stone ?? ""}
+                          disabled={disabled}
+                          onChange={(e) => set(s.id, { stone: e.target.value })}
+                          placeholder={`Its stone: what people say, what they do. Lenses: ${STONE_RELATIONS.join(", ").toLowerCase()}`}
+                          aria-label="How people here treat the stone"
+                        />
                       )}
+                      {monsField}
                     </div>
                   </div>
                 );
