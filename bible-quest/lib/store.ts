@@ -1,69 +1,45 @@
-import { promises as fs } from "fs";
-import path from "path";
+import { backend, inDocs } from "./backend";
 import type { Quest, QuestNotes, QuestView } from "./game";
 
-export const DOCS_DIR = path.resolve(
-  process.env.BIBLE_DIR ?? path.join(/*turbopackIgnore: true*/ process.cwd(), "..", "game-docs"),
-);
-const QUESTS = path.join(DOCS_DIR, "quests.json");
-const LOG = path.join(DOCS_DIR, "10-decision-log.md");
+const LOG = "10-decision-log.md";
 const LOG_HEADING = "## Bible Quest";
 
 type QuestFile = { version: number; quests: Quest[] };
 
-async function exists(p: string) {
-  try {
-    await fs.access(p);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function inDocs(rel: string) {
-  const abs = path.resolve(DOCS_DIR, rel);
-  if (!abs.startsWith(DOCS_DIR + path.sep)) throw new Error("Path outside game-docs");
-  return abs;
-}
-
-async function read(): Promise<QuestFile> {
-  return JSON.parse(await fs.readFile(QUESTS, "utf8"));
-}
-
-async function write(data: QuestFile) {
-  const tmp = QUESTS + ".tmp";
-  await fs.writeFile(tmp, JSON.stringify(data, null, 2) + "\n");
-  await fs.rename(tmp, QUESTS);
-}
+const read = () => backend().getJSON<QuestFile>("quests", { version: 1, quests: [] });
+const write = (data: QuestFile, by?: string) => backend().setJSON("quests", data, by);
 
 export async function listQuests(): Promise<QuestView[]> {
-  const { quests } = await read();
-  const notes = await readAllNotes();
-  return Promise.all(
-    quests.map(async (q) => {
-      const started = q.status === "open" && !!notes[q.id];
-      if (!q.file) return { ...q, fileExists: false, started };
-      const abs = inDocs(q.file);
-      const fileExists = await exists(abs);
-      return { ...q, fileExists, absPath: abs, started: started || (q.status === "open" && fileExists) };
-    }),
-  );
+  const b = backend();
+  const [{ quests }, notes, docs] = await Promise.all([read(), b.allNotes(), b.listDocs()]);
+  const paths = new Set(docs.map((d) => d.path));
+  return quests.map((q) => {
+    const started = q.status === "open" && !!notes[q.id];
+    if (!q.file) return { ...q, fileExists: false, started };
+    const fileExists = paths.has(q.file);
+    return {
+      ...q,
+      fileExists,
+      absPath: b.kind === "files" ? inDocs(q.file) : undefined,
+      started: started || (q.status === "open" && fileExists),
+    };
+  });
 }
 
-async function appendLog(title: string, answer: string, when: Date) {
+async function appendLog(title: string, answer: string, when: Date, by?: string) {
   const date = `${when.getFullYear()}-${String(when.getMonth() + 1).padStart(2, "0")}-${String(when.getDate()).padStart(2, "0")}`;
   const [first, ...rest] = answer.trim().split("\n");
   const more = rest.filter((l) => l.trim()).map((l) => "  " + l.replace(/^\s+/, ""));
   const line = [`- ${date}. **${title}**: ${first}`, ...more].join("\n");
-  let text = (await exists(LOG)) ? await fs.readFile(LOG, "utf8") : "# Decision log\n";
+  let text = (await backend().readDoc(LOG))?.text ?? "# Decision log\n";
   if (!text.includes(LOG_HEADING)) {
     text = text.replace(/\s*$/, "") + `\n\n${LOG_HEADING}\n\nDecisions locked in with the Bible Quest tracker.\n`;
   }
   text = text.replace(/\s*$/, "") + `\n${line}\n`;
-  await fs.writeFile(LOG, text);
+  await backend().writeDoc(LOG, text, by);
 }
 
-export async function completeQuest(id: string, answer: string, bonusXp = 0, outputText?: string | null) {
+export async function completeQuest(id: string, answer: string, bonusXp = 0, outputText?: string | null, by?: string) {
   const data = await read();
   const quest = data.quests.find((q) => q.id === id);
   if (!quest) throw new Error("Unknown quest");
@@ -73,113 +49,78 @@ export async function completeQuest(id: string, answer: string, bonusXp = 0, out
   quest.answer = answer.trim();
   quest.doneAt = now.toISOString();
   quest.bonusXp = Math.max(0, Math.min(500, Math.round(bonusXp) || 0));
-  if (quest.output && outputText) await writeDoc(quest.output, outputText, null);
-  await write(data);
-  await appendLog(quest.title, answer || "(done)", now);
+  if (quest.output && outputText) await writeDoc(quest.output, outputText, null, by);
+  await write(data, by);
+  await appendLog(quest.title, answer || "(done)", now, by);
   return quest;
 }
 
-export async function reopenQuest(id: string) {
+export async function reopenQuest(id: string, by?: string) {
   const data = await read();
   const quest = data.quests.find((q) => q.id === id);
   if (!quest) throw new Error("Unknown quest");
   quest.status = "open";
   delete quest.doneAt;
   delete quest.bonusXp;
-  await write(data);
+  await write(data, by);
   return quest;
 }
 
-export async function createSheet(id: string) {
+export async function createSheet(id: string, by?: string) {
   const data = await read();
   const quest = data.quests.find((q) => q.id === id);
   if (!quest?.file) throw new Error("This quest has no sheet");
-  const target = inDocs(quest.file);
-  if (await exists(target)) return target;
+  if (await backend().readDoc(quest.file)) return quest.file;
   const name = quest.title.replace(/ sheet$/, "");
   let body = `# ${name}\n\nStatus: Draft\n\n${quest.prompt}\n`;
   if (quest.template) {
-    const tpl = inDocs(path.join("_templates", `${quest.template}.md`));
-    if (await exists(tpl)) {
-      body = (await fs.readFile(tpl, "utf8")).replace(/\*name\*/, name);
+    const tpl = await backend().readDoc(`_templates/${quest.template}.md`);
+    if (tpl) {
+      body = tpl.text.replace(/\*name\*/, name);
       body = body.replace(/\n/, `\n\n> Quest: ${quest.prompt}\n`);
     }
   }
-  await fs.mkdir(path.dirname(target), { recursive: true });
-  await fs.writeFile(target, body);
-  return target;
+  await backend().writeDoc(quest.file, body, by);
+  return quest.file;
 }
-
-const SKIP_DIRS = new Set(["source", "node_modules", ".git"]);
 
 export type DocEntry = { path: string; mtime: number; size: number };
 
-export async function listDocs(): Promise<DocEntry[]> {
-  const out: DocEntry[] = [];
-  async function walk(dir: string, rel: string) {
-    for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
-      if (entry.name.startsWith(".")) continue;
-      const abs = path.join(dir, entry.name);
-      const r = rel ? `${rel}/${entry.name}` : entry.name;
-      if (entry.isDirectory()) {
-        if (!SKIP_DIRS.has(entry.name)) await walk(abs, r);
-      } else if (entry.name.endsWith(".md")) {
-        const st = await fs.stat(abs);
-        out.push({ path: r, mtime: Math.round(st.mtimeMs), size: st.size });
-      }
-    }
-  }
-  await walk(DOCS_DIR, "");
-  return out.sort((a, b) => a.path.localeCompare(b.path));
-}
+export const listDocs = () => backend().listDocs();
 
-function mdPath(rel: string) {
+function checkPath(rel: string) {
   if (!rel.endsWith(".md")) throw new Error("Only .md files");
-  return inDocs(rel);
+  if (rel.split("/").some((p) => p === ".." || p === "") || rel.startsWith("/")) throw new Error("Bad path");
 }
 
 export async function readDoc(rel: string) {
-  const abs = mdPath(rel);
-  const [text, st] = await Promise.all([fs.readFile(abs, "utf8"), fs.stat(abs)]);
-  return { path: rel, text, mtime: Math.round(st.mtimeMs) };
+  checkPath(rel);
+  const doc = await backend().readDoc(rel);
+  if (!doc) throw new Error("Not found");
+  return { path: rel, ...doc };
 }
 
 export class ConflictError extends Error {
   constructor(public current: { text: string; mtime: number }) {
-    super("The file changed on disk since you opened it");
+    super("The file changed since you opened it");
   }
 }
 
-export async function writeDoc(rel: string, text: string, baseMtime?: number | null) {
-  const abs = mdPath(rel);
-  if (baseMtime != null && (await exists(abs))) {
-    const st = await fs.stat(abs);
-    if (Math.round(st.mtimeMs) !== baseMtime) {
-      throw new ConflictError({ text: await fs.readFile(abs, "utf8"), mtime: Math.round(st.mtimeMs) });
-    }
+export async function writeDoc(rel: string, text: string, baseMtime?: number | null, by?: string) {
+  checkPath(rel);
+  if (baseMtime != null) {
+    const current = await backend().readDoc(rel);
+    if (current && current.mtime !== baseMtime) throw new ConflictError(current);
   }
-  await fs.mkdir(path.dirname(abs), { recursive: true });
-  await fs.writeFile(abs, text);
-  const st = await fs.stat(abs);
-  return { path: rel, mtime: Math.round(st.mtimeMs) };
-}
-
-const NOTES = path.join(DOCS_DIR, "notes.json");
-
-async function readAllNotes(): Promise<Record<string, QuestNotes>> {
-  if (!(await exists(NOTES))) return {};
-  return JSON.parse(await fs.readFile(NOTES, "utf8"));
+  const mtime = await backend().writeDoc(rel, text, by);
+  return { path: rel, mtime };
 }
 
 export async function getNotes(questId: string): Promise<QuestNotes> {
-  return (await readAllNotes())[questId] ?? { overall: "", notes: [] };
+  return ((await backend().getNote(questId)) as QuestNotes | null) ?? { overall: "", notes: [] };
 }
 
-export async function putNotes(questId: string, value: QuestNotes) {
-  const all = await readAllNotes();
-  if (!value.overall.trim() && value.notes.length === 0 && value.data == null) delete all[questId];
-  else all[questId] = value;
-  const tmp = NOTES + ".tmp";
-  await fs.writeFile(tmp, JSON.stringify(all, null, 2) + "\n");
-  await fs.rename(tmp, NOTES);
+export async function putNotes(questId: string, value: QuestNotes, by?: string) {
+  const empty = !value.overall.trim() && value.notes.length === 0 && value.data == null;
+  await backend().putNote(questId, empty ? null : value, by);
 }

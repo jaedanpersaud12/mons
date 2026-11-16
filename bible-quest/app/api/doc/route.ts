@@ -16,7 +16,9 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   try {
     const { path, text, baseMtime } = await request.json();
-    return NextResponse.json(await writeDoc(String(path), String(text ?? ""), baseMtime ?? null));
+    return NextResponse.json(
+      await writeDoc(String(path), String(text ?? ""), baseMtime ?? null, request.headers.get("x-client-id") ?? undefined),
+    );
   } catch (error) {
     if (error instanceof ConflictError) {
       return NextResponse.json({ error: error.message, current: error.current }, { status: 409 });

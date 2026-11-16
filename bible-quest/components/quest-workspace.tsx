@@ -8,6 +8,7 @@ import { LoadingButton } from "@/components/interior/loading-button";
 import { MdView } from "@/components/md-view";
 import { AnnotatedMd } from "@/components/annotated-md";
 import { ProgressBar } from "@/components/interior/progress-bar";
+import { useLive } from "@/lib/live";
 import { ChartWidget, FieldsWidget, IslandsWidget, TypesWidget } from "@/components/widgets";
 import { LAYERS, VERDICTS, composeAnswer, type QuestNote, type QuestView } from "@/lib/game";
 import { BONUS_XP, asTypes, objectivesFor, widgetAnswer, widgetOutput, type Ctx, type Objective } from "@/lib/widgets";
@@ -80,7 +81,7 @@ function useSheet(path: string | undefined, enabled: boolean) {
     }
   }, [path]);
 
-  return { text, state, edit, save, reload };
+  return { text, state, edit, save, reload, path };
 }
 
 const saveLabel: Record<SaveState, string> = {
@@ -132,6 +133,7 @@ export function QuestWorkspace({
   const [openKey, setOpenKey] = useState<string | null>(null);
   const loaded = useRef<string | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const skipSave = useRef(false);
 
   useEffect(() => {
     if (!quest) return;
@@ -168,8 +170,13 @@ export function QuestWorkspace({
   useEffect(() => {
     const id = q?.id;
     if (!id || loaded.current !== id || q?.status === "done") return;
+    if (skipSave.current) {
+      skipSave.current = false;
+      return;
+    }
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
+      saveTimer.current = null;
       fetch("/api/notes", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -193,6 +200,38 @@ export function QuestWorkspace({
   }, []);
 
   const sheet = useSheet(q?.file, !!quest && isSheet && !!q?.fileExists);
+
+  // Another device changed something this quest shows: pull it in.
+  useLive((scopes) => {
+    if (!quest) return;
+    const id = quest.id;
+    if (scopes.includes(`notes:${id}`) && saveTimer.current == null) {
+      fetch(`/api/notes?quest=${encodeURIComponent(id)}`, { cache: "no-store" })
+        .then((r) => r.json())
+        .then((b) => {
+          if (loaded.current !== id) return;
+          skipSave.current = true;
+          setNotes(b.notes ?? []);
+          setOverall(b.overall ?? "");
+          setData(b.data ?? null);
+        })
+        .catch(() => {});
+    }
+    if (id !== "types" && scopes.includes("notes:types")) {
+      fetch("/api/notes?quest=types", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((b) => setTypesData(asTypes(b.data)))
+        .catch(() => {});
+    }
+    const docs = scopes.filter((x) => x.startsWith("doc:")).map((x) => x.slice(4));
+    if (docs.some((d) => (sections ?? []).some((sec) => sec.file === d))) {
+      fetch(`/api/context?id=${encodeURIComponent(id)}`, { cache: "no-store" })
+        .then((r) => r.json())
+        .then((b) => setSections(b.sections ?? []))
+        .catch(() => {});
+    }
+    if (sheet.path && docs.includes(sheet.path) && sheet.state === "saved") sheet.reload();
+  });
 
   const types = q?.id === "types" ? asTypes(data) : typesData;
   const ctx: Ctx = useMemo(

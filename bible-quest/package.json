@@ -5,9 +5,13 @@
   "scripts": {
     "dev": "next dev -p 4321",
     "build": "next build",
-    "start": "next start -p 4321"
+    "start": "next start -p 4321",
+    "db:seed": "node --env-file-if-exists=.env.local scripts/seed-db.mjs",
+    "db:export": "node --env-file-if-exists=.env.local scripts/export-db.mjs"
   },
   "dependencies": {
+    "@neon/realtime": "^0.2.1",
+    "@neondatabase/serverless": "^1.2.1",
     "@types/markdown-it": "^14.2.0",
     "@types/markdown-it-footnote": "^3.0.4",
     "dompurify": "^3.4.18",

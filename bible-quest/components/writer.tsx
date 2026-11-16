@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { SegmentedControl } from "@/components/interior/segmented-control";
 import { renderMarkdown } from "@/lib/markdown";
+import { useLive } from "@/lib/live";
 import type { QuestView } from "@/lib/game";
 
 type Doc = { path: string; mtime: number; size: number };
@@ -50,6 +51,23 @@ export function Writer() {
     const body = await res.json();
     if (res.ok) setDocs(body.docs);
   }, []);
+
+  useLive((scopes) => {
+    const docs = scopes.filter((x) => x.startsWith("doc:")).map((x) => x.slice(4));
+    if (!docs.length) return;
+    refreshDocs();
+    const f = latest.current.file;
+    if (f && docs.includes(f) && latest.current.status === "saved") {
+      fetch(`/api/doc?path=${encodeURIComponent(f)}`, { cache: "no-store" })
+        .then((r) => r.json())
+        .then((b) => {
+          if (latest.current.file !== f || latest.current.status !== "saved") return;
+          setText(b.text);
+          setMtime(b.mtime);
+        })
+        .catch(() => {});
+    }
+  });
 
   useEffect(() => {
     refreshDocs();

@@ -4,3 +4,7 @@ next-env.d.ts
 *.tsbuildinfo
 .DS_Store
 *.tmp
+
+# local secrets
+.env*
+!.env.example

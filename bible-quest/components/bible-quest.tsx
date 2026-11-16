@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ProgressBar } from "@/components/interior/progress-bar";
 import { SegmentedControl } from "@/components/interior/segmented-control";
@@ -8,6 +8,7 @@ import { TaskSteps } from "@/components/interior/task-steps";
 import { Tooltip, TooltipGroup } from "@/components/interior/tooltip-group";
 import { ValueFlash } from "@/components/interior/value-flash";
 import { QuestWorkspace, type CompletePayload } from "@/components/quest-workspace";
+import { useLive, useLiveStatus } from "@/lib/live";
 import {
   LAYERS,
   achievements,
@@ -43,6 +44,13 @@ export function BibleQuest() {
     if (!res.ok) throw new Error(body.error ?? "Could not load quests");
     setQuests(body.quests);
   }, []);
+
+  const reloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useLive((scopes) => {
+    if (!scopes.some((x) => x === "quests" || x.startsWith("notes:") || x.startsWith("doc:"))) return;
+    if (reloadTimer.current) clearTimeout(reloadTimer.current);
+    reloadTimer.current = setTimeout(() => load().catch(() => {}), 150);
+  });
 
   useEffect(() => {
     load().catch((e) => setError(String(e)));
@@ -324,7 +332,8 @@ function Header(props: {
     <header className={`${card} p-6`}>
       <div className="flex flex-wrap items-end justify-between gap-5">
         <div>
-          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-stone-500">
+          <p className="flex items-center text-[11px] font-medium uppercase tracking-[0.08em] text-stone-500">
+            <LiveDot />
             Bible Quest · mons
             <a href="/write" className="ml-3 normal-case tracking-normal text-[#93B0FF] hover:underline">
               Writer
@@ -453,5 +462,20 @@ function QuestRow({
         +{quest.xp + (quest.bonusXp ?? 0)}
       </span>
     </button>
+  );
+}
+
+function LiveDot() {
+  const status = useLiveStatus();
+  if (status === "off") return null;
+  const tone =
+    status === "live" ? "bg-emerald-400" : status === "error" ? "bg-red-400" : "bg-amber-300";
+  const label =
+    status === "live" ? "Synced live" : status === "error" ? "Sync stopped, retrying" : "Connecting sync";
+  return (
+    <span title={label} aria-label={label} className="mr-2 inline-flex items-center gap-1.5 normal-case tracking-normal">
+      <span className={`size-2 rounded-full ${tone} ${status === "live" ? "shadow-[0_0_0_3px_rgba(52,211,153,0.15)]" : ""}`} />
+      <span className="text-[11px] text-stone-500">{status === "live" ? "Live" : label}</span>
+    </span>
   );
 }

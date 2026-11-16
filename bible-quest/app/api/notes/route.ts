@@ -12,8 +12,9 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   try {
     const { quest, overall, notes, data } = await request.json();
+    const by = request.headers.get("x-client-id") ?? undefined;
     if (!quest) return NextResponse.json({ error: "Missing quest" }, { status: 400 });
-    await putNotes(String(quest), { overall: String(overall ?? ""), notes: Array.isArray(notes) ? notes : [], ...(data != null ? { data } : {}) });
+    await putNotes(String(quest), { overall: String(overall ?? ""), notes: Array.isArray(notes) ? notes : [], ...(data != null ? { data } : {}) }, by);
     return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 400 });

@@ -19,6 +19,35 @@ Open http://localhost:4321.
 - **Hold to lock it in** saves the answer, awards XP and writes a line to the decision log. Done quests can be reopened.
 - **Ranks** go from Villager to Stormholder. Badges and a daily streak track progress.
 
+## Deployed, with live sync
+
+Bible Quest runs in two modes:
+
+- **Files** (no `DATABASE_URL`): reads and writes `../game-docs`. Good for working offline.
+- **Database** (`DATABASE_URL` set): everything lives in Neon Postgres, so every machine sees the same bible. This is what the Vercel deployment uses.
+
+Live sync uses [Neon Realtime](https://neon.com/docs/realtime/overview). Every write bumps a row in a small `revisions` table. Each open copy of the app subscribes to that table over one WebSocket and refetches whatever another device changed: the quest list, the quest you have open, the doc in the writer. The green **Live** dot in the header shows it's connected. Your own edits are tagged with a per-tab id, so a tab never reloads its own changes.
+
+If both devices edit the same doc at once, the second save is caught and asks whether to load the other version or overwrite.
+
+### Environment variables
+
+See `.env.example`. On Vercel, set all four:
+
+| Variable | What it is |
+|---|---|
+| `DATABASE_URL` | Neon connection string |
+| `NEON_REALTIME_URL` | Neon Console → Postgres database → Realtime |
+| `NEON_REALTIME_SECRET` | Same page, "Copy secret". Server only, never in the browser |
+| `APP_PASSCODE` | The passcode for the site. Anyone with the URL can't get in without it |
+
+### Moving data in and out
+
+- `npm run db:seed` copies `../game-docs` into the database. It refuses to overwrite a database that already has quests unless you add `-- --force`.
+- `npm run db:export` writes the database back out to `../game-docs`, so you can commit a readable copy to git.
+
+New database? Run `scripts/schema.sql` once, on Postgres 18 with Realtime enabled.
+
 ## Each quest has its own tool
 
 Quests aren't a text box on top of a doc. Each one opens the tool that fits it, and the markdown is generated from what you do there.
