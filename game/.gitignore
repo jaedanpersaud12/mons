@@ -1,0 +1,5 @@
+# Godot editor cache and local builds
+.godot/
+build/
+*.exe
+*.pck

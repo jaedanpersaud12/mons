@@ -1,9 +1,10 @@
 # mons
 
-The game bible for the creature RPG, and Bible Quest, the app used to write it.
+The creature RPG itself, its game bible, and Bible Quest, the app used to write the bible.
 
 | Folder | What it is |
 |---|---|
+| `game/` | The game: a Godot 4.6 project. Open `game/project.godot` in Godot and press F5. See `game/README.md` |
 | `game-docs/` | The bible: story, world, creatures, decisions. `quests.json` and `notes.json` hold Bible Quest progress |
 | `bible-quest/` | Next.js app that turns the bible into quests with their own tools |
 
