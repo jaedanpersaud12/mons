@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Build Fernhollow harbour, the home town, as splat data the game can load.
 
-Everything here is generated: terrain, the bay, the cottage with the fruit stall,
-houses, tower, windmill, harbour wall, market, dock, boats, trees, grass and props.
+The buildings, trees and street furniture are assets (game/assets/*.splat), lifted from the
+Fernhollow Splat Town artifact by tools/export_assets.py and placed here by position, turn and scale.
+The land itself is generated: terrain, the bay, paths, grass, the harbour wall, the market, the pier and boats.
 Light is baked in two flat tones (lit side, shaded side) plus cast shadows on the ground,
 so shapes stay clean once the pixel pass snaps them to the palette.
 
@@ -66,7 +67,19 @@ def pier_mask(x, z):
     return (x > PIER[0]) & (x < PIER[1]) & (z > zs - 2.5) & (z < zs + PIER_LEN)
 
 
+PADS = []        # level ground under each building: (x, z, radius, height)
+
+
 def natural_h(x, z):
+    """The land, levelled off around each building so none of them hangs over a slope."""
+    x, z = np.asarray(x, float), np.asarray(z, float)
+    h = base_h(x, z)
+    for (px, pz, r, ph) in PADS:
+        h = h + (ph - h) * sm(r + 3.0, r, np.hypot(x - px, z - pz))
+    return h
+
+
+def base_h(x, z):
     x, z = np.asarray(x, float), np.asarray(z, float)
     d = shore(x) - z                                              # distance inland (negative out to sea)
     beach = d * 0.11
@@ -135,6 +148,31 @@ def blocks(p, size=0.45, tones=STONE, seed=0.0):
     return np.array(tones)[k]
 
 
+ASSETS = Path(__file__).resolve().parent.parent / "assets"
+_asset_cache = {}
+
+
+def load_asset(name):
+    if name not in _asset_cache:
+        b = (ASSETS / f"{name}.splat").read_bytes()
+        n = int(np.frombuffer(b[:4], np.uint32)[0]); o = 4
+        pos = np.frombuffer(b[o:o + n * 12], "<f4").reshape(n, 3); o += n * 12
+        col = np.frombuffer(b[o:o + n * 4], np.uint8).reshape(n, 4); o += n * 4
+        misc = np.frombuffer(b[o:o + n * 4], np.uint8).reshape(n, 4); o += n * 4
+        nrm = np.frombuffer(b[o:o + n * 4], np.int8).reshape(n, 4)
+        _asset_cache[name] = (pos, col, misc, nrm)
+    return _asset_cache[name]
+
+
+# what each building stops and shades: (local x, local z, half width, half depth, height), and where its door opens
+FOOT = {
+    "home": {"boxes": [(0, 0, 4.45, 2.95, 5.0), (0.1, 3.55, 2.6, 0.75, 3.6)], "door": (1.1, 4.9), "pad": 6.2},
+    "cabin": {"boxes": [(0, 0, 3.25, 2.65, 4.0), (0, 3.2, 1.5, 0.85, 2.6)], "door": (0.0, 4.6), "pad": 5.0},
+    "hall": {"boxes": [(0, 0, 5.45, 3.25, 5.4), (0, 3.6, 1.8, 0.9, 3.0), (6.4, 0.3, 1.4, 1.6, 2.6)], "door": (0.0, 5.0), "pad": 7.6},
+    "mill": {"boxes": [(0, 0, 1.6, 1.6, 6.4)], "door": (0.0, 2.6), "pad": 3.0},
+}
+
+
 # ---------------- shapes ----------------
 class World:
     def __init__(self):
@@ -147,6 +185,36 @@ class World:
 
     def add(self, p, col, nrm, diam, **kw):
         self.out.add(p, col, nrm, diam, **kw)
+
+    def place(self, name, x, z, yaw=0.0, scale=1.0, keep=1.0, y=None, solid=None, crown=None):
+        """Put an asset in the world. keep < 1 thins it out and enlarges what is left to cover, for the big buildings."""
+        pos, col, misc, nrm = load_asset(name)
+        y = float(natural_h(x, z)) if y is None else y
+        sel = np.ones(len(pos), bool) if keep >= 1.0 else rng.random(len(pos)) < keep
+        sel &= misc[:, 1] != 11                                                     # the mill's sails are a moving part, added separately
+        p = rot(pos[sel].astype(float) * scale, yaw) + np.array([x, y, z])
+        m = misc[sel].copy(); n = nrm[sel].copy(); c = col[sel]
+        m[:, 2] = np.clip(np.round(m[:, 2] * scale / np.sqrt(min(keep, 1.0))), 1, 255)
+        g = m[:, 1]; smoke = g == 2
+        g[(g == 1) | (g == 4)] = 0                                                  # weather vane and lamp flames: still, for now
+        g[smoke] = 8                                                                # chimney smoke
+        nv = rot(n[:, :3].astype(float), yaw); n[:, :3] = np.round(nv)
+        self.out.pos.append(p.astype(np.float32)); self.out.col.append(c); self.out.misc.append(m); self.out.nrm.append(n)
+        base = name.split("_")[0]
+        if base in FOOT:
+            for (lx, lz, hw, hd, top) in FOOT[base]["boxes"]:
+                o = rot(np.array([lx, 0, lz]) * scale, yaw)
+                self.boxes.append((x + o[0], z + o[2], hw * scale, hd * scale, yaw, top * scale))
+            d = rot(np.array([FOOT[base]["door"][0], 0, FOOT[base]["door"][1]]) * scale, yaw)
+            return [round(float(x + d[0]), 2), round(float(z + d[2]), 2)]
+        if solid: self.solid_c.append((x, z, solid * scale))
+        if crown: self.balls.append((x, y + crown[0] * scale, z, crown[1] * scale))
+        return None
+
+    def lamp(self, x, z, yaw=0.0):
+        self.place("lamp", x, z, yaw, solid=0.2)
+        o = rot(np.array([0.42, 0, 0.0]), yaw)
+        self.lights.append([float(x + o[0]), float(terr_h(x, z)) + 0.1, float(z + o[2])])
 
     def box(self, c, size, yaw, colour, diam=0.11, top=True, tones=None, lo=0.66, faces="xz", glow=0):
         """An upright box sitting on y = c[1]. colour is one colour or a function of local points."""
@@ -354,12 +422,12 @@ def polyline_dist(x, z, pts):
 
 
 PATHS = [
-    ([(-9.0, -0.4), (-5.0, 1.6), (0.0, 3.0), (2.0, 4.0)], 1.0),                      # cottage to the dock
+    ([(-10.9, 0.2), (-5.0, 1.6), (0.0, 3.0), (2.0, 4.0)], 1.0),                      # cottage to the dock
     ([(0.0, 3.0), (5.0, 2.4), (8.0, 2.6), (10.0, 3.2)], 1.0),                         # along the shore to the quay
-    ([(-5.0, 1.6), (-3.0, -5.0), (-1.0, -10.5), (2.5, -15.0), (4.0, -21.0), (4.5, -29.0)], 1.1),   # the road out, past the hall, to the gate
-    ([(-1.0, -10.5), (6.0, -8.0), (12.0, -6.5), (17.0, -8.5), (22.0, -7.0)], 0.9),    # into the houses
-    ([(12.0, -6.5), (12.5, -2.0), (13.0, 1.0)], 0.8),                                 # down to the market
-    ([(-1.0, -10.5), (-8.0, -14.0), (-15.0, -17.0), (-19.5, -18.0)], 0.7),            # up to the windmill
+    ([(-5.0, 1.6), (-3.0, -5.0), (-1.0, -10.5), (2.8, -15.0), (4.0, -21.0), (4.5, -29.0)], 1.1),   # the road out, past the hall, to the gate
+    ([(-1.0, -10.5), (6.0, -8.0), (12.0, -5.6), (17.0, -3.4), (21.5, -1.6)], 0.9),    # into the houses
+    ([(12.0, -5.6), (12.5, -2.0), (13.0, 1.0)], 0.8),                                 # down to the market
+    ([(-1.0, -10.5), (-8.0, -13.4), (-14.0, -15.0), (-20.6, -15.8)], 0.7),            # up to the windmill
 ]
 
 
@@ -391,18 +459,19 @@ def shadowed(W, p):
 def build():
     W = World()
     P = W.places
-    # ---------- buildings ----------
-    cot = W.house(-12.0, -3.0, 0.5, 5.2, 4.2, 2.5, 2.3, ROOF_THATCH, door_side=1)       # home: the door faces the bay
-    P["home_door"] = [-9.6, 0.2]
-    W.house(2.0, -10.5, -0.2, 4.2, 3.6, 2.4, 1.9, ROOF_TEAL)
-    W.house(13.0, -9.5, 0.1, 5.0, 4.0, 2.6, 2.1, ROOF_RED)
-    W.house(19.0, -5.5, -0.15, 4.4, 3.6, 2.4, 1.9, ROOF_RED, door_side=-1)
-    W.house(25.5, -9.0, 0.3, 4.6, 4.0, 2.5, 2.0, ROOF_RED)
-    W.house(8.0, -15.5, 0.0, 4.0, 3.6, 2.3, 1.8, ROOF_RED, chimney=False)
-    hall = W.house(-4.5, -16.5, 0.25, 7.2, 4.6, 2.9, 2.2, ROOF_TEAL, door_side=-1)      # the warden's workshop hall
-    P["hall_door"] = [-4.6, -13.4]
-    # the tower
-    tx, tz = 21.0, -13.0; ty = float(natural_h(tx, tz)) - 0.1
+    # ---------- buildings: the assets from the Fernhollow artifact ----------
+    SITES = [("home", -13.0, -4.5, 0.25, 0.6), ("cabin_blue", 8.0, -16.8, -0.1, 0.5), ("cabin_red", 14.2, -10.4, 0.1, 0.5), ("cabin_red", 21.4, -6.6, -0.15, 0.5),
+             ("cabin_red", 27.6, -11.2, 0.3, 0.5), ("hall", -5.5, -19.0, 0.2, 0.45), ("mill", -21.0, -19.0, 0.0, 1.0)]
+    for (nm, x, z, yaw, keep) in SITES:
+        PADS.append((x, z, FOOT[nm.split("_")[0]]["pad"], float(base_h(x, z)) + 0.05))
+    doors = [W.place(nm, x, z, yaw, keep=keep) for (nm, x, z, yaw, keep) in SITES]
+    P["doors"] = [doors[0], doors[1], doors[2], doors[3], doors[4], doors[2], doors[5]]     # 0 home, 1 the blue cabin, 2-5 red cabins, 6 the hall
+    P["home_door"] = doors[0]; P["hall_door"] = doors[5]; P["smoke"] = []
+    HOME = lambda lx, lz: [round(float(v), 2) for v in (rot(np.array([lx, 0, lz]), 0.25) + np.array([-13.0, 0, -4.5]))[[0, 2]]]
+    W.solid_c.append((-21.0, -19.0, 1.9))
+    hub = [-21.0, float(natural_h(-21.0, -19.0)) + 4.75, -19.0]
+    # the tower (generated: the artifact has none)
+    tx, tz = 21.0, -14.0; ty = float(natural_h(tx, tz)) - 0.1
     W.cone([tx, ty, tz], 1.9, 6.4, STONE, r_top=1.7)
     W.cone([tx, ty + 6.4, tz], 2.5, 3.0, ROOF_BLUE)
     W.tube([tx, ty + 9.3, tz], [tx, ty + 11.0, tz], 0.04, 0.03, WOOD_DARK, diam=0.05)
@@ -411,29 +480,10 @@ def build():
     for a in (0.8, 2.6, 4.4):
         W.window([tx + np.sin(a) * 1.86, ty + 4.2, tz + np.cos(a) * 1.86], a, 0.5, 0.7)
     W.boxes.append((tx, tz, 1.9, 1.9, 0.0, 8.0)); W.solid_c.append((tx, tz, 2.0))
-    # the windmill
-    mx, mz = -21.0, -19.0; my = float(natural_h(mx, mz)) - 0.1
-    W.cone([mx, my, mz], 1.9, 5.2, STONE, r_top=1.35)
-    W.cone([mx, my + 5.2, mz], 1.75, 1.7, ROOF_RED)
-    W.box([mx, my, mz + 1.75], (0.8, 1.5, 0.1), 0.0, WOOD_DARK, diam=0.08, top=False)
-    W.window([mx + 1.2, my + 3.0, mz + 1.15], 0.8, 0.5, 0.6)
-    W.boxes.append((mx, mz, 1.8, 1.8, 0.0, 6.2)); W.solid_c.append((mx, mz, 2.0))
-    hub = [mx + 0.9, my + 4.9, mz + 1.5]
-    # the arch between the shore path and the quay
-    ax, az = 8.6, 2.9; ay = float(terr_h(ax, az)) - 0.1
-    for sz in (-1.5, 1.5):
-        W.box([ax, ay, az + sz], (0.9, 2.6, 0.9), 0.0, lambda p: blocks(p, 0.4), diam=0.1)
-        W.solid_c.append((ax, az + sz, 0.6))
-    W.box([ax, ay + 2.6, az], (1.0, 0.7, 3.9), 0.0, lambda p: blocks(p, 0.4), diam=0.1)
     # the gate on the road out, with its signpost
-    for sx in (-1.6, 1.6):
-        gx, gz = 4.2 + sx, -24.0; gy = float(natural_h(gx, gz)) - 0.1
-        W.box([gx, gy, gz], (0.8, 2.2, 0.8), 0.0, lambda p: blocks(p, 0.38), diam=0.1); W.solid_c.append((gx, gz, 0.6))
-        W.cone([gx, gy + 2.2, gz], 0.62, 0.5, ROOF_RED, diam=0.09)
-    sx_, sz_ = 6.6, -22.0; sy_ = float(natural_h(sx_, sz_))
-    W.tube([sx_, sy_, sz_], [sx_, sy_ + 1.9, sz_], 0.06, 0.05, WOOD_DARK, diam=0.06)
-    W.box([sx_ + 0.3, sy_ + 1.5, sz_], (0.9, 0.24, 0.06), 0.3, WOOD[0], diam=0.07); W.box([sx_ - 0.3, sy_ + 1.15, sz_], (0.8, 0.22, 0.06), -0.4, WOOD[0], diam=0.07)
-    P["gate"] = [4.2, -24.5]
+    W.place("gate", 4.2, -24.4); W.solid_c.append((2.5, -24.4, 0.45)); W.solid_c.append((5.9, -24.4, 0.45))
+    W.place("sign", 6.8, -22.2, -0.3, solid=0.3); W.place("sign", 0.6, 1.2, 0.5, solid=0.3)
+    P["gate"] = [4.2, -25.0]
     # ---------- the quay, the harbour wall, the market ----------
     x, y = grid(QUAY[1] - QUAY[0], QUAY[4] + 1.4, 0.12); x = x + QUAY[0]; y = y - 1.4; n = len(x); zs = shore(x) + 1.5
     for face in range(2):
@@ -455,12 +505,9 @@ def build():
         W.barrel(bx, float(shore(bx)) + bz - 1.0)
     for (cx, cz, s) in [(14.0, 0.6, 0.6), (14.5, 0.1, 0.5), (21.0, 0.4, 0.55), (25.6, -1.6, 0.6), (26.0, -1.0, 0.5)]:
         W.crate(cx, float(shore(cx)) + cz - 0.8, s, yaw=rng.uniform(0, 1))
-    # a well in the little square between the houses
-    wx, wz = 16.5, -9.2; wy = float(natural_h(wx, wz))
-    W.cone([wx, wy - 0.1, wz], 0.75, 0.8, STONE, r_top=0.75, diam=0.09)
-    for sx in (-0.7, 0.7): W.tube([wx + sx, wy, wz], [wx + sx, wy + 2.0, wz], 0.06, 0.06, WOOD_DARK, diam=0.06)
-    W.gable_roof([wx, wy + 2.0, wz], 1.5, 0.9, 0.5, 0.0, ROOF_RED, over=0.2, diam=0.09, sag=0.02)
-    W.solid_c.append((wx, wz, 0.95)); P["well"] = [wx, wz + 1.5]
+    # a well in the little square between the houses and the market
+    wx, wz = 16.8, -2.4
+    W.place("well", wx, wz, 0.2, solid=1.0); P["well"] = [wx, wz + 1.5]
     # ---------- the pier ----------
     zs2 = float(shore(2.0)); cxp = (PIER[0] + PIER[1]) / 2
     x, z = grid(1.7, PIER_LEN + 2.5, 0.1); x = x + PIER[0] - 0.05; z = z + zs2 - 2.5; n = len(x)
@@ -483,34 +530,40 @@ def build():
     W.add(np.stack([-1.6 + 1.4 * u, py + 1.65 - 0.9 * v - 0.25 * np.sin(u * np.pi), np.full(n, 4.9) + 0.05 * np.sin(u * 9)], 1), np.repeat(hexc(0x6C8C94)[None], n, 0) * np.where((np.floor(u * 14) + np.floor(v * 9)) % 2 == 0, 1, 0.8)[:, None], None, 0.07, sway=0.25 * v)
     P["nets"] = [-0.9, 4.0]
     # ---------- home: the fruit stall under its awning, the garden, the washing line ----------
-    sx, sz = -8.6, -3.6
-    W.stall(sx, sz, 0.5 + np.pi / 2, RED, goods=(RED, YELLOW, hexc(0x8ACC50)))
-    P["fruit_stall"] = [-7.2, -3.0]
-    W.barrel(-9.3, -0.6); W.barrel(-8.6, -5.6, r=0.26, h=0.6)
-    W.fence([(-15.0, 0.6), (-11.5, 2.4), (-8.8, 1.4)]); W.fence([(-15.0, 0.6), (-17.0, -3.0), (-15.6, -6.6)])
-    W.tree(-17.2, 0.8, 4.8, 2.7, 30000); W.tree(-6.5, -8.5, 3.8, 2.0); W.tree(9.5, -12.0, 4.0, 2.2); W.tree(27.0, -3.0, 4.4, 2.4)
-    W.tree(-12.0, -11.0, 3.6, 1.9); W.tree(15.5, -18.0, 4.0, 2.2); W.tree(-27.0, -9.0, 4.2, 2.3); W.tree(-1.5, -24.0, 3.8, 2.0); W.tree(22.0, -20.5, 4.2, 2.3)
-    a, b = np.array([-14.4, float(natural_h(-14.4, -7.2)) + 1.9, -7.2]), np.array([-12.3, float(natural_h(-12.3, -11)) + 2.0, -10.6])
-    W.tube([a[0], a[1] - 1.9, a[2]], a, 0.05, 0.05, WOOD_DARK, diam=0.06)
+    st = HOME(6.2, 1.2)
+    W.stall(st[0], st[1], 0.25 + np.pi / 2, RED, goods=(RED, YELLOW, hexc(0x8ACC50)))
+    P["fruit_stall"] = HOME(7.8, 1.4)
+    b1, b2 = HOME(3.6, 4.3), HOME(6.0, -1.2)
+    W.barrel(b1[0], b1[1]); W.barrel(b2[0], b2[1], r=0.26, h=0.6)
+    mb = HOME(-1.6, 4.6); W.place("mailbox", mb[0], mb[1], 0.25, solid=0.25)
+    for (mx_, mz_, yw) in [(10.4, -12.0, -0.1), (16.6, -5.6, 0.1)]: W.place("mailbox", mx_, mz_, yw, solid=0.25)
+    W.fence([(-19.6, 0.4), (-17.6, 2.6), (-13.0, 3.2)])
+    # trees and bushes: the artifact's oaks, pines and shrubs
+    for (nm, x, z, sc) in [("oak", -20.6, -0.6, 0.8), ("oak_blossom", 9.6, -7.0, 0.5), ("oak", 30.0, -3.4, 0.7), ("oak_gold", -27.5, -9.0, 0.75), ("oak", -1.6, -26.0, 0.65),
+                           ("oak_gold", 23.5, -21.5, 0.7), ("oak", 15.8, -20.5, 0.62), ("oak", -8.6, -11.4, 0.5), ("oak_blossom", -17.5, -11.5, 0.5)]:
+        W.place(nm, x, z, rng.uniform(0, 6.28), sc, solid=0.5, crown=(5.0, 2.7))
+    for (x, z, sc) in [(-27.0, -16.0, 1.0), (-16.0, -25.0, 0.9), (-26.0, -24.0, 1.1), (31.0, -18.0, 1.0), (-31.0, -3.0, 0.9), (12.0, -25.0, 1.0), (-11.5, -26.0, 0.95)]:
+        W.place("pine", x, z, rng.uniform(0, 6.28), sc, solid=0.4, crown=(3.2, 1.5))
+    for i, (x, z, sc) in enumerate([(-18.8, -8.6, 1.0), (-7.2, -1.2, 0.8), (-16.4, 3.4, 0.8), (5.0, -12.6, 0.9), (11.0, -13.6, 0.9), (18.2, -12.6, 1.0), (24.6, -4.6, 0.8), (30.6, -8.0, 1.0),
+                                    (-0.6, -15.4, 0.8), (-12.6, -15.4, 1.0), (1.6, -25.6, 1.0), (7.4, -25.4, 1.0), (-24.0, -13.5, 0.9), (26.0, -17.0, 0.9), (-2.4, -4.6, 0.7), (12.2, -3.6, 0.7)]):
+        W.place(f"bush{i % 3}", x, z, rng.uniform(0, 6.28), sc, solid=0.55)
+    a, b = np.array([-17.0, float(natural_h(-17.0, -9.6)) + 1.9, -9.6]), np.array([-14.4, float(natural_h(-14.4, -12.4)) + 2.0, -12.4])
+    W.tube([a[0], a[1] - 1.9, a[2]], a, 0.05, 0.05, WOOD_DARK, diam=0.06); W.tube([b[0], b[1] - 2.0, b[2]], b, 0.05, 0.05, WOOD_DARK, diam=0.06)
     W.tube(a, b, 0.012, 0.012, CREAM, diam=0.04)
     for i, cc in enumerate((CREAM, RED, hexc(0x7CA8D8), CREAM, YELLOW)):                # washing on the line
         t = 0.15 + 0.17 * i; q = a + (b - a) * t; m = 420; u, v = rng.random(m), rng.random(m)
         d = (b - a) / np.linalg.norm(b - a)
         W.add(q[None] + d[None] * (u[:, None] - 0.5) * 0.5 + np.array([0, -1, 0])[None] * v[:, None] * 0.62, np.repeat(np.asarray(cc)[None], m, 0) * (0.9 + 0.1 * (v[:, None] < 0.5)), None, 0.08, sway=0.55 * v)
-    P["washing"] = [-12.8, -8.2]
+    P["washing"] = [-15.4, -10.2]
     # the pen beside the hall, where the warden keeps rescues
     W.fence([(-10.6, -12.6), (-6.4, -11.6), (-6.0, -8.6), (-10.2, -9.0), (-10.6, -12.6)], h=0.85)
     P["pen"] = [-8.4, -10.6]; P["pen_gate"] = [-5.2, -10.2]
-    W.barrel(-1.0, -13.6); W.crate(-0.4, -14.2, 0.6); W.crate(-0.9, -14.8, 0.45, yaw=0.5)
-    # benches
-    for (bx, bz, yw) in [(14.0, -5.0, 0.2), (-3.0, 2.6, 0.3), (17.5, -11.0, 2.9)]:
-        by = float(terr_h(bx, bz))
-        W.box([bx, by + 0.38, bz], (1.3, 0.08, 0.42), yw, WOOD[0], diam=0.07)
-        for s2 in (-0.5, 0.5): W.box(np.array([bx, by, bz]) + rot(np.array([s2, 0, 0]), yw), (0.1, 0.38, 0.38), yw, WOOD_DARK, diam=0.07, top=False)
-        W.solid_c.append((bx, bz, 0.5)); P.setdefault("benches", []).append([bx, bz])
-    # lanterns: the eight that light the ground at night
-    for (lx, lz) in [(-8.0, 0.9), (-1.0, 3.6), (3.6, 3.2), (11.0, -4.4), (15.0, 2.2), (22.0, 1.4), (-2.6, -12.6), (3.0, -19.0)]:
-        W.lantern(lx, lz if lx < 9 or lz < -3 else float(shore(lx)) - 4.2)
+    W.barrel(0.6, -12.4); W.crate(1.2, -13.0, 0.6); W.crate(0.7, -13.6, 0.45, yaw=0.5)
+    # benches and lamps, from the artifact. The eight lamps light the ground at night
+    for (bx, bz, yw) in [(14.8, -4.4, 0.2), (-3.0, 2.6, 0.3), (19.0, -1.2, 2.9)]:
+        W.place("bench", bx, bz, yw, solid=0.6); P.setdefault("benches", []).append([bx, bz])
+    for (lx, lz, yw) in [(-9.0, 1.2, 0.0), (-1.0, 3.6, 0.0), (3.6, 3.2, 3.14), (11.0, -5.0, 0.0), (15.0, None, 0.0), (22.0, None, 3.14), (-2.0, -13.8, 0.0), (3.0, -20.0, 3.14)]:
+        W.lamp(lx, float(shore(lx)) - 4.2 if lz is None else lz, yw)
     # rocks on the shore and in the shallows
     for _ in range(46):
         x = rng.uniform(-33, 33); z = float(shore(x)) + rng.uniform(-1.0, 7.0)
@@ -530,7 +583,7 @@ def build():
         xs = np.arange(X0, X1, spacing); zs_ = np.arange(Z0, Z1, spacing)
         x, z = np.meshgrid(xs, zs_); x = x.ravel() + rng.uniform(-0.5, 0.5, x.size) * spacing; z = z.ravel() + rng.uniform(-0.5, 0.5, z.size) * spacing
         keep = region(x, z); return x[keep], z[keep]
-    x, z = ground(0.062, 0.17, lambda x, z: (shore(x) - z > -0.5) | quay_mask(x, z))
+    x, z = ground(0.068, 0.17, lambda x, z: (shore(x) - z > -0.5) | quay_mask(x, z))
     inside = np.zeros(len(x), bool)
     for (bx, bz, hw, hd, yaw, top) in W.boxes:
         q = rot(np.stack([x - bx, np.zeros(len(x)), z - bz], 1), -yaw); inside |= (np.abs(q[:, 0]) < hw - 0.25) & (np.abs(q[:, 2]) < hd - 0.25)
@@ -552,7 +605,7 @@ def build():
     ground_shadow = lambda px, pz: shadowed(W, np.stack([px, natural_h(px, pz) + 0.05, pz], 1))
     # grass blades, flowers and the tall grass by the road out
     xb, zb = ground(0.085, 0.26, lambda x, z: (shore(x) - z > 5.2) & ~quay_mask(x, z))
-    pdb = path_dist(xb, zb); keep = (pdb > 0.35) & (rng.random(len(xb)) < 0.82)
+    pdb = path_dist(xb, zb); keep = (pdb > 0.35) & (rng.random(len(xb)) < 0.72)
     for (bx, bz, hw, hd, yaw, top) in W.boxes:
         q2 = rot(np.stack([xb - bx, np.zeros(len(xb)), zb - bz], 1), -yaw); keep &= ~((np.abs(q2[:, 0]) < hw + 0.2) & (np.abs(q2[:, 2]) < hd + 0.2))
     xb, zb = xb[keep], zb[keep]
@@ -568,7 +621,7 @@ def build():
     fcol = np.array([hexc(0xFFFFFF), hexc(0xF8D848), hexc(0xF07898), hexc(0xF8A0C0)])[rng.integers(0, 4, fl.sum())]
     W.add(np.stack([xb[fl], natural_h(xb[fl], zb[fl]) + 0.3, zb[fl]], 1), fcol, None, 0.12, sway=0.3)
     # flower beds by the cottage and sunflowers by the arch
-    for (fx, fz, k) in [(-10.0, 1.2, 60), (-13.5, 0.8, 50), (6.8, 0.6, 30), (-6.2, -13.6, 40), (11.5, -7.2, 40)]:
+    for (fx, fz, k) in [(-15.5, 1.2, 60), (-9.4, 2.2, 50), (6.8, 0.6, 30), (-1.2, -14.4, 40), (11.6, -6.6, 40)]:
         a, r_ = rng.uniform(0, 2 * np.pi, k), np.sqrt(rng.random(k)) * 1.0
         px, pz = fx + np.cos(a) * r_, fz + np.sin(a) * r_
         fcol = np.array([hexc(0xF07898), hexc(0xFFFFFF), hexc(0xF8D848), hexc(0xE85870)])[rng.integers(0, 4, k)]
@@ -589,16 +642,9 @@ def build():
         W.add(np.stack([xs_, np.full(len(xs_), WATER), zs_], 1), np.repeat(bw.WATER1[None], len(xs_), 0), np.tile([0.0, 1, 0], (len(xs_), 1)), 0.16, sway=np.sqrt(dep / 3.0), group=5)
 
     # ---------- things the game moves: the windmill's sails and the boat at the pier ----------
-    sails = Splats()
-    for k in range(4):
-        a = k * np.pi / 2
-        ax_ = np.array([np.cos(a), np.sin(a), 0.0]); up = np.array([-np.sin(a), np.cos(a), 0.0])
-        p, nr_, _t = tube_points(ax_ * 0.2, ax_ * 3.3, 0.05, 0.04, 500); sails.add(p, lit(nr_, np.repeat(WOOD_DARK[None], len(p), 0)), nr_, 0.07)
-        u, v = grid(2.5, 0.7, 0.1); u = u + 0.7; v = v + 0.05; m = len(u)
-        p = ax_[None] * u[:, None] + up[None] * v[:, None] + np.array([0, 0, 0.04])
-        lat = ((np.floor(u / 0.42) + np.floor(v / 0.25)) % 2 == 0)
-        sails.add(p, np.where(lat[:, None], CREAM[None], hexc(0xE4D8BC)[None]), np.tile([0.0, 0, 1], (m, 1)), 0.1)
-        sails.add(p * [1, 1, -1], np.repeat(hexc(0xD4C8AC)[None], m, 0), np.tile([0.0, 0, -1], (m, 1)), 0.1)
+    mp, mc, mm, mn = load_asset("mill"); sl = mm[:, 1] == 11
+    sm_ = mm[sl].copy(); sm_[:, 1] = 0
+    sails_arrays = ((mp[sl] - np.array([0, 4.75, 0], np.float32)).astype(np.float32), mc[sl], sm_, mn[sl])
     # smoke from the chimneys: loose splats the shader lifts and thins (group 8)
     for (cx, cy, cz) in P["smoke"][:5]:
         m = 46
@@ -609,7 +655,7 @@ def build():
     zs2 = float(shore(2.0))
     P["npcs"] = [
         {"id": "seller", "home": D[0], "scale": 1.12, "speed": 1.4, "top": [0.86, 0.36, 0.30], "bot": [0.36, 0.30, 0.42], "hair": [0.20, 0.13, 0.10],
-         "loop": [[-7.3, -3.3, 16, "work", -1.9], [-8.9, -1.0, 5, "stand", 2.0], [-7.3, -3.3, 12, "work", -1.9], [-6.2, -1.2, 4, "stand", 0.6]],
+         "loop": [HOME(7.6, 1.3) + [16, "work", -1.4], HOME(4.6, 4.6) + [5, "stand", 2.0], HOME(7.6, 1.3) + [12, "work", -1.4], HOME(8.4, 3.6) + [4, "stand", 0.6]],
          "lines": ["Morning. The fruit's fresh, and the little thief knows it.", "Your mum says today's the day you walk to the gate."]},
         {"id": "fisher", "home": D[1], "scale": 1.18, "speed": 1.5, "top": [0.30, 0.46, 0.62], "bot": [0.30, 0.24, 0.18], "hair": [0.55, 0.52, 0.48],
          "loop": [[2.0, zs2 + 8.6, 22, "fish", 0.0], [2.0, zs2 - 2.0, 0, "stand", 0], [-0.9, 3.9, 10, "work", 0.2], [2.0, zs2 - 2.0, 0, "stand", 0]],
@@ -618,13 +664,13 @@ def build():
          "loop": [q(11.5) + [7, "sweep", 0.4], q(15.0, -0.4) + [7, "sweep", -0.3], q(18.5) + [7, "sweep", 0.5], q(23.0, -0.6) + [7, "sweep", -0.4], q(18.5, -1.6) + [5, "sweep", 0.0]],
          "lines": ["Sweep it at dawn and it's back by noon.", "It isn't sand. Sand doesn't smear."]},
         {"id": "chat_a", "home": D[2], "scale": 1.1, "speed": 1.4, "top": [0.52, 0.34, 0.58], "bot": [0.24, 0.22, 0.30], "hair": [0.12, 0.10, 0.10],
-         "loop": [[15.5, -7.6, 26, "talk", 0.9], [14.3, -4.5, 9, "stand", 2.6]],
+         "loop": [[15.5, -1.6, 26, "talk", 1.2], [14.8, -3.4, 9, "stand", 2.6]],
          "lines": ["Another one came in to the warden last night. From further out than the last.", "Somebody's been asking after the elders, I heard."]},
         {"id": "chat_b", "home": D[4], "scale": 1.16, "speed": 1.4, "top": [0.92, 0.78, 0.40], "bot": [0.40, 0.28, 0.20], "hair": [0.42, 0.24, 0.12],
-         "loop": [[17.0, -7.2, 30, "talk", -1.9], [17.6, -9.9, 6, "stand", 3.1]],
+         "loop": [[18.2, -1.5, 30, "talk", -1.6], [19.4, -2.6, 6, "stand", 3.1]],
          "lines": ["The well's never run low. Not once in my life.", "You're up early. Off to the gate?"]},
         {"id": "warden", "home": D[6], "scale": 1.2, "speed": 1.5, "top": [0.34, 0.52, 0.40], "bot": [0.30, 0.26, 0.22], "hair": [0.24, 0.16, 0.10],
-         "loop": [[-5.2, -10.0, 14, "work", -1.6], [-2.2, -13.4, 7, "work", 2.4], [-5.2, -10.0, 10, "stand", -1.6], [-4.6, -13.2, 5, "stand", 0.3]],
+         "loop": [[-5.2, -10.0, 14, "work", -1.6], [-1.6, -12.6, 7, "work", 2.4], [-5.2, -10.0, 10, "stand", -1.6], [P["hall_door"][0], P["hall_door"][1] + 0.4, 5, "stand", 0.3]],
          "lines": ["Easy near the pen. The calf's only been here a week.", "He's a long way from home. They all are."]},
         {"id": "kid", "home": D[0], "scale": 0.82, "speed": 3.3, "top": [0.95, 0.60, 0.25], "bot": [0.28, 0.44, 0.60], "hair": [0.16, 0.10, 0.08],
          "loop": [[-6.0, 3.2, 1.5, "stand", 0], [-2.0, 5.0, 1, "stand", 0], [4.6, 5.6, 2.5, "stand", 0], [-3.0, 2.2, 1, "stand", 0], [-11.0, 3.6, 3, "stand", 0]],
@@ -638,9 +684,9 @@ def build():
     ]
     P["strays"] = [
         {"id": "sleeper", "kind": "sleeper", "x": q(10.9, -0.5)[0], "z": q(10.9, -0.5)[1], "scale": 0.5, "fur": [0.46, 0.50, 0.58]},
-        {"id": "thief", "kind": "thief", "x": -3.0, "z": 3.4, "scale": 0.46, "fur": [0.80, 0.70, 0.50], "stall": [-7.9, -2.0]},
+        {"id": "thief", "kind": "thief", "x": -3.0, "z": 3.4, "scale": 0.46, "fur": [0.80, 0.70, 0.50], "stall": HOME(8.2, 0.2)},
     ]
-    props = {"sails": (sails.arrays(), {"at": hub, "yaw": 0.55}), "boat": (W.boat(None, 0, local=True), {"at": boat_at, "yaw": 1.45})}
+    props = {"sails": (sails_arrays, {"at": hub, "yaw": 0.0}), "boat": (W.boat(None, 0, local=True), {"at": boat_at, "yaw": 1.45})}
     return W, props
 
 
