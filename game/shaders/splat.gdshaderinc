@@ -3,13 +3,38 @@
 // A second viewport runs pass B with white instead of colour to collect the weights; the post shader divides one by the other.
 uniform float wind_t = 0.0;
 uniform float size_mul = 1.0;   // splats are enlarged when only part of them is drawn
-uniform vec4 sh_a[4];   // contact shadows: x, z, ground y, yaw
-uniform vec4 sh_b[4];   // radius x, radius z, strength
+uniform vec4 sh_a[16];   // contact shadows: x, z, ground y, yaw
+uniform vec4 sh_b[16];   // radius x, radius z, strength
 #ifdef CREATURE
 uniform mat4 bones[16];
 uniform int parents[16];   // each bone's parent: a splat blends between its bone and this one
 uniform float snort = 9.0;
+// townsfolk and strays reuse the hero and the calf: recoloured by body part, with the hero's pack and the calf's fire left out
+uniform float npc_on = 0.0;
+uniform vec3 npc_top = vec3(0.8, 0.4, 0.3);
+uniform vec3 npc_bot = vec3(0.3, 0.3, 0.4);
+uniform vec3 npc_hair = vec3(0.2, 0.15, 0.1);
+uniform float plain = 0.0;
+uniform vec3 fur = vec3(0.5);
 #endif
+// ---- time of day ----
+// Light is baked into every splat for a morning sun. The time of day is a colour grade laid over that,
+// and the pixel pass grades its palette the same way, so the picture stays on-palette at any hour.
+uniform vec3 tod_mul = vec3(1.0);
+uniform float tod_desat = 0.0;
+uniform float lights_on = 0.0;     // 0 by day, 1 at night: windows and lanterns glow, and lanterns light the ground
+uniform vec4 lamps[8];             // x, y, z, reach
+vec3 grade(vec3 c) { return mix(c, vec3(dot(c, vec3(0.3, 0.59, 0.11))), tod_desat) * tod_mul; }
+vec3 time_of_day(vec3 c, vec3 p, bool glow) {
+	if (glow) { return mix(mix(vec3(0.24, 0.32, 0.42), c, 0.3), c, lights_on); }   // a window is dull glass by day and lit at night
+	float lk = 0.0;
+	if (lights_on > 0.01) {
+		for (int i = 0; i < 8; i++) {
+			if (lamps[i].w > 0.0) { float d = distance(p, lamps[i].xyz) / lamps[i].w; lk = max(lk, d < 0.5 ? 1.0 : (d < 1.0 ? 0.5 : 0.0)); }   // two flat rings of light
+		}
+	}
+	return mix(grade(c), c * vec3(1.0, 0.82, 0.55), lk * lights_on * 0.85);
+}
 // ---- water ----
 // The water is not drawn. Anything below the waterline inside the lake is recoloured by how deep it is, so the bed and what stands on it show through.
 uniform vec3 water_fx = vec3(1.0);            // see-through water on, light lines on, foam and glints on
@@ -125,6 +150,19 @@ void vertex() {
 		int l = int(g);
 		float fx = floor(CUSTOM0.x * 255.0 + 0.5), wt = ph;
 		sw = 0.0;
+		if (plain > 0.5) {
+			if (fx > 0.5 || c.a > 0.5) { kill = true; }
+			c.rgb = fur * clamp(dot(c.rgb, vec3(0.3, 0.59, 0.11)) * 2.4, 0.5, 1.3);
+		}
+		if (npc_on > 0.5) {
+			if (l == 12 || l == 13) { kill = true; }
+			float lum = dot(c.rgb, vec3(0.3, 0.59, 0.11));
+			bool skin = c.r > 0.72 && lum > 0.58;
+			if (!skin && p.y > 0.2) {
+				vec3 base = p.y > 1.2 ? npc_hair : (p.y > 0.6 ? npc_top : npc_bot);
+				c.rgb = base * clamp(lum * 2.6, 0.55, 1.25);
+			}
+		}
 		if (fx > 191.5) { float a = fract(TIME * 0.28 + ph); p += vec3(sin(ph * 40.0 + a * 4.0) * 0.07 * a, a * 0.42, cos(ph * 33.0 + a * 3.0) * 0.07 * a); size *= (1.0 - a) * smoothstep(0.0, 0.15, a); c.rgb *= 1.0 - 0.5 * a; wt = 1.0; }
 		else if (fx > 159.5) { float a = fract(TIME * 0.2 + ph), q = ph * 61.0; p += vec3(sin(q + a * 4.0) * 0.16 * a - 0.25 * a * a, a * 1.5, cos(q * 1.3 + a * 3.0) * 0.16 * a); size *= (0.5 + 2.2 * a) * smoothstep(1.0, 0.45, a) * smoothstep(0.0, 0.1, a); wt = 1.0; }
 		else if (fx > 127.5) { float a = (snort - ph * 0.3) / 0.8; if (a < 0.0 || a > 1.0) { kill = true; } float sd = sign(p.x), q = ph * 61.0, e = 1.0 - (1.0 - a) * (1.0 - a); p += vec3(sd * (0.05 + 0.3 * e) + sin(q) * 0.1 * e, -0.07 * e + 0.2 * a * a + cos(q * 1.7) * 0.09 * e, 0.18 * e + sin(q * 2.3) * 0.1 * e); size *= (0.5 + 1.9 * a) * smoothstep(1.0, 0.5, a) * smoothstep(0.0, 0.08, a); wt = 1.0; }
@@ -157,6 +195,14 @@ void vertex() {
 			if (p.y < water_y - 0.02) { kill = true; }
 			size = 0.07 * (1.0 - age * 0.7);
 		}
+	}
+	if (g == 8.0) {
+		// chimney smoke: each splat rises, drifts with the wind, swells and fades, then starts again
+		float a = fract(water_t * 0.11 + ph);
+		p += vec3(sin(ph * 40.0 + a * 3.0) * 0.22 * a + 0.9 * a * a, a * 2.8, cos(ph * 33.0 + a * 2.0) * 0.2 * a + 0.3 * a * a);
+		size *= (0.45 + 1.5 * a) * smoothstep(1.0, 0.55, a) * smoothstep(0.0, 0.08, a);
+		sw = 0.0;
+		if (lights_on > 0.9) { kill = true; }   // fires are banked for the night
 	}
 	if (g == 5.0) {
 		// The surface layer. Inside the lake these splats are only ever foam or glints; the rest of the time they are not drawn.
@@ -197,7 +243,7 @@ void vertex() {
 	}
 	float lum0 = dot(c.rgb, vec3(1.0));
 	if (c.a < 0.5) {
-		for (int i = 0; i < 4; i++) {
+		for (int i = 0; i < 16; i++) {
 			if (sh_b[i].z > 0.0) {
 				vec2 d = p.xz - sh_a[i].xy; float s = sin(sh_a[i].w), co = cos(sh_a[i].w), hh = p.y - sh_a[i].z;
 				d = vec2(co * d.x - s * d.y, s * d.x + co * d.y) / sh_b[i].xy; float k = dot(d, d);
@@ -212,6 +258,7 @@ void vertex() {
 	if (g == 6.0) { c.rgb = bed_tint(c.rgb, p, max(bed_dark, step(dot(c.rgb, vec3(1.0)), lum0 * 0.88))); }
 	else if (g != 5.0 && g != 7.0 && c.a < 0.5) { c.rgb = water_tint(c.rgb, p); }
 #endif
+	c.rgb = time_of_day(c.rgb, (MODEL_MATRIX * vec4(p, 1.0)).xyz, c.a > 0.5);
 	vec4 vc = MODELVIEW_MATRIX * vec4(p, 1.0);
 	float R = 0.5 * size * size_mul;
 	vec3 vn = vec3(0.0);
