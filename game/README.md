@@ -149,3 +149,15 @@ Exported from the browser build.
 - Lighting is still baked into the splat colours.
 - Tested only with a software renderer. Real frame rate is unknown until it runs on a GPU.
 - Found on the way: byte-packed custom vertex attributes only delivered one channel in the Compatibility renderer, so the data is sent as floats.
+
+## Checks on every push
+
+GitHub runs `.github/workflows/game.yml` on every push that touches `game/`:
+
+1. **Splat budget** (`tools/budget.py`): each baked scene has a ceiling in `tests/budget.json`. Going over fails the build.
+2. **Still-frame check** (`tools/stills.py`): renders the fixed cameras in `tests/stills.json` and compares each with its reference in `tests/stills/`. More than 2% of pixels changed fails the build. The run's `stills-report` download has `report.html` with reference, new render and changed pixels side by side.
+3. **Windows build**: exported and attached to the run as `Mons-windows-<commit>`.
+
+When a picture is meant to change, put `[stills]` in the commit message and the run saves the new pictures as the references. Locally: `GODOT=/path/to/godot python3 tools/stills.py` (add `--update` to accept).
+
+Still-frame runs use `--fixed-fps` and a fixed random seed, so the same code gives the same picture every time.

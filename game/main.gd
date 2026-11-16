@@ -115,6 +115,9 @@ func _ready() -> void:
 		if a.begins_with("--hop="): hop_at = int(a.substr(6))
 		if a.begins_with("--walk="):
 			for v in a.substr(7).split(","): auto_dir.append(float(v))
+	if shot_path != "":      # still-frame runs must come out the same every time: fixed dice, fixed detail (run with --fixed-fps so the clock is fixed too)
+		seed(7); auto_detail = false
+		cam_dist_now = cam_dist      # no zoom easing: the camera starts where it was asked to be
 	var t0 := Time.get_ticks_msec()
 	_setup_viewports()
 	_load_world()

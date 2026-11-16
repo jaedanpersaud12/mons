@@ -1,0 +1,4 @@
+{
+  "_about": "Most splats each baked scene may hold. The check fails the build when a scene goes over.",
+  "scenes": { "town": 3500000, "world": 3500000 }
+}

@@ -1,0 +1,14 @@
+{
+  "_about": "Fixed cameras for the still-frame check. Each one is rendered on every push and compared with tests/stills/<name>.png. at = x,z the camera looks at; tod = time of day 0..1.",
+  "width": 960, "height": 540, "frames": 12, "fps": 30,
+  "max_changed": 0.02,
+  "shots": [
+    {"name": "town-opening-morning", "scene": "town", "tod": 0.32},
+    {"name": "town-home-noon",       "scene": "town", "at": [-13, -4.5],  "yaw": 0.9,  "pitch": 0.38, "dist": 16, "tod": 0.5},
+    {"name": "town-quay-afternoon",  "scene": "town", "at": [0, 2],       "yaw": 0.0,  "pitch": 0.30, "dist": 16, "tod": 0.62},
+    {"name": "town-hall-mill-dusk",  "scene": "town", "at": [-12, -15],   "yaw": 0.2,  "pitch": 0.50, "dist": 30, "tod": 0.75},
+    {"name": "town-harbour-night",   "scene": "town", "at": [2, -2],      "yaw": 3.6,  "pitch": 0.28, "dist": 22, "tod": 0.95},
+    {"name": "town-overview-noon",   "scene": "town", "at": [0, -8],      "yaw": 0.3,  "pitch": 0.75, "dist": 46, "tod": 0.5},
+    {"name": "meadow-pond-noon",     "scene": "world", "tod": 0.5}
+  ]
+}
