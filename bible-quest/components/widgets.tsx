@@ -424,11 +424,12 @@ export function TypesWidget({ value, onChange, disabled }: { value: unknown; onC
 
 /* ---------- Chart: click cells to set matchups ---------- */
 
-const NEXT: Record<string, Cell | undefined> = { "": "strong", strong: "weak", weak: "none", none: undefined };
+const NEXT: Record<string, Cell | undefined> = { "": "strong", strong: "weak", weak: "none", none: "absorb", absorb: undefined };
 const CELL: Record<Cell, { text: string; cls: string }> = {
   strong: { text: "2", cls: "bg-emerald-400/25 text-emerald-200" },
   weak: { text: "½", cls: "bg-red-400/20 text-red-200" },
   none: { text: "0", cls: "bg-stone-950 text-stone-500 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]" },
+  absorb: { text: "+", cls: "bg-sky-400/20 text-sky-200" },
 };
 
 export function ChartWidget({ value, onChange, types, disabled }: { value: unknown; onChange: (v: { cells: Record<string, Cell> }) => void; types: TypesData; disabled?: boolean }) {
@@ -459,10 +460,10 @@ export function ChartWidget({ value, onChange, types, disabled }: { value: unkno
     <div>
       <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-stone-400">
         <span>Rows attack, columns defend. <span className="text-[#93B0FF]/80">Blue</span> names are secondary. Click to cycle:</span>
-        {(["strong", "weak", "none"] as Cell[]).map((c) => (
+        {(["strong", "weak", "none", "absorb"] as Cell[]).map((c) => (
           <span key={c} className="inline-flex items-center gap-1.5">
             <span className={`grid size-5 place-items-center rounded-[5px] text-[11px] font-medium ${CELL[c].cls}`}>{CELL[c].text}</span>
-            {c === "strong" ? "hits hard" : c === "weak" ? "resisted" : "no effect"}
+            {c === "strong" ? "hits hard" : c === "weak" ? "resisted" : c === "none" ? "no effect" : "absorbed, heals"}
           </span>
         ))}
         <span className="text-stone-500">

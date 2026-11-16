@@ -82,7 +82,7 @@ export type TypesData = {
   secondary: string[];
   origins: Record<string, string>;
 };
-export type Cell = "strong" | "weak" | "none";
+export type Cell = "strong" | "weak" | "none" | "absorb";
 export type ChartData = { cells: Record<string, Cell> };
 export type Island = { element?: string; biome?: string; inspiration?: string; stone?: string; mons?: string };
 export type IslandsData = { islands: Record<string, Island> };
@@ -270,10 +270,10 @@ export function widgetOutput(quest: Quest, data: unknown, ctx: Ctx): string | nu
   if (w.type === "chart") {
     const types = orderedTypes(ctx.types);
     const { cells } = asChart(data);
-    const sym = { strong: "2×", weak: "½×", none: "0" } as const;
+    const sym = { strong: "2×", weak: "½×", none: "0", absorb: "heals" } as const;
     return (
       head("Type chart") +
-      "Rows attack, columns defend. Blank means normal damage.\n\n" +
+      "Rows attack, columns defend. Blank means normal damage. Heals means the target absorbs the hit and recovers a little.\n\n" +
       `| Attacker | ${types.join(" | ")} |\n|---|${types.map(() => "---").join("|")}|\n` +
       types.map((a) => `| **${a}** | ${types.map((d) => (cells[`${a}>${d}`] ? sym[cells[`${a}>${d}`]] : "")).join(" | ")} |`).join("\n") +
       "\n\n## Strengths and weaknesses\n\n" +
