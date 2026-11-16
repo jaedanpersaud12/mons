@@ -5,13 +5,56 @@ uniform float wind_t = 0.0;
 uniform float size_mul = 1.0;   // splats are enlarged when only part of them is drawn
 uniform vec4 sh_a[4];   // contact shadows: x, z, ground y, yaw
 uniform vec4 sh_b[4];   // radius x, radius z, strength
-uniform vec3 water_fx = vec3(1.0);   // new water on, caustics on, foam and glints on
-uniform vec4 wader = vec4(0.0);      // player x, z, unused, 1 while standing in water
 #ifdef CREATURE
 uniform mat4 bones[16];
 uniform int parents[16];   // each bone's parent: a splat blends between its bone and this one
 uniform float snort = 9.0;
 #endif
+// ---- water ----
+// The water is not drawn. Anything below the waterline inside the lake is tinted by how deep it is, so the bed and what stands on it show through.
+uniform vec3 water_fx = vec3(1.0);            // see-through water on, caustics on, foam and glints on
+uniform vec4 wader = vec4(0.0);               // player x, z, unused, 1 while standing in water
+uniform vec4 pond = vec4(7.0, 6.0, 7.5, 5.0); // lake centre x, z and radii
+uniform float pond_zone = 1.5;
+uniform float water_y = -0.2;
+uniform float water_t = 0.0;
+
+float pond_r(vec2 w) { vec2 q = (w - pond.xy) / pond.zw; return dot(q, q); }
+
+// how far the waterline has pulled back from its rest height at this spot (it breathes in and out)
+float water_lap(vec2 w, float t) {
+	return max(0.004, 0.034 + 0.028 * sin(t * 0.9 + w.x * 0.6 + w.y * 0.45) + 0.012 * sin(t * 1.7 + w.x * 1.9 - w.y * 1.3));
+}
+
+vec3 water_tint(vec3 c, vec3 p) {
+	vec2 w = p.xz; float t = water_t;
+	if (pond_r(w) > pond_zone) { return c; }
+	float rest = water_y - p.y;                      // depth below the resting waterline
+	if (rest <= 0.0) { return c; }
+	float wd = rest - water_lap(w, t);               // depth below the waterline right now
+	if (wd <= 0.0) { return c * mix(0.9, 0.74, smoothstep(0.0, 0.05, rest)); }   // just uncovered: wet
+	if (water_fx.x < 0.5) {
+		// the old look: a flat blue that hides everything
+		return mix(vec3(0.525, 0.839, 0.824), vec3(0.184, 0.525, 0.678), clamp(wd / 0.38, 0.0, 1.0)) * (0.84 + 0.1 * sin(t * 2.1 + w.x * 3.1 + w.y * 2.3));
+	}
+	// caustics: three warped sine sheets, bright where they cross zero
+	vec2 q = w * 2.6;
+	float ca = sin(q.x * 1.3 + 1.4 * sin(q.y * 1.1 + t * 0.7) + t * 0.5) + sin(q.y * 1.5 + 1.4 * sin(q.x * 0.9 - t * 0.6) - t * 0.35) + sin((q.x + q.y) * 0.9 + 1.2 * sin((q.x - q.y) * 0.8 + t * 0.5));
+	ca = pow(1.0 - abs(ca) / 3.0, 10.0) * water_fx.y;
+	c *= 0.96 + 0.5 * ca * exp(-wd * 1.1) * smoothstep(0.0, 0.08, wd);
+	// absorption (red goes first), then the light the water itself scatters back
+	float fog = 1.0 - exp(-wd * 0.75);
+	vec3 col = c * exp(-vec3(1.9, 0.62, 0.30) * wd) * (1.0 - 0.7 * smoothstep(1.2, 3.0, wd)) + mix(vec3(0.07, 0.60, 0.80), vec3(0.02, 0.14, 0.42), smoothstep(0.3, 2.2, wd)) * fog;
+	// slow light bands across the surface
+	col *= 1.0 + 0.05 * sin(w.x * 1.1 + w.y * 0.7 + t * 0.8) * sin(w.x * 0.5 - w.y * 1.3 - t * 0.6);
+	// rings around the player while wading
+	if (wader.w > 0.5) {
+		float r = length(w - wader.xy), ring = sin(r * 15.0 - t * 7.0) * (1.0 - smoothstep(0.25, 1.7, r)) * smoothstep(0.05, 0.3, r);
+		col += vec3(0.2, 0.24, 0.24) * max(ring, 0.0);
+	}
+	return col;
+}
+
 varying flat vec4 v_col;
 varying flat vec3 v_c;
 varying flat vec3 v_n;
@@ -42,46 +85,28 @@ void vertex() {
 	}
 #else
 	if (g == 5.0) {
-		// Water. Each splat carries the lakebed colour under it and the depth there (stored in the sway slot, as a square root so the shallows keep their precision).
-		float d = sw * sw * 3.0, t = wind_t; vec2 w = p.xz;
+		// The surface layer. Inside the lake these splats are only ever foam or glints; the rest of the time they are not drawn.
+		float d = sw * sw * 3.0, t = water_t; vec2 w = p.xz;
 		sw = 0.0;
-		if (water_fx.x < 0.5) {
-			// the old flat look, kept for comparison
-			c.rgb = mix(vec3(0.525, 0.839, 0.824), vec3(0.184, 0.525, 0.678), clamp(d / 0.38, 0.0, 1.0)) * 0.9;
-			p.y += sin(t * 1.3 + p.x * 1.7 + p.z * 1.3) * 0.02; c.rgb *= 0.93 + 0.11 * sin(t * 2.1 + p.x * 3.1 + p.z * 2.3 + ph * 6.283);
+		if (pond_r(w) > pond_zone) {
+			// a puddle outside the lake: plain flat water
+			c.rgb = mix(vec3(0.525, 0.839, 0.824), vec3(0.184, 0.525, 0.678), clamp(d / 0.38, 0.0, 1.0)) * (0.84 + 0.1 * sin(t * 2.1 + w.x * 3.1 + w.y * 2.3));
 		} else {
-			// the waterline breathes in and out
-			float lap = max(0.004, 0.034 + 0.028 * sin(t * 0.9 + w.x * 0.6 + w.y * 0.45) + 0.012 * sin(t * 1.7 + w.x * 1.9 - w.y * 1.3)), s = d - lap;
-			// caustics: three warped sine sheets, bright where they cross zero
-			vec2 q = w * 2.6;
-			float ca = sin(q.x * 1.3 + 1.4 * sin(q.y * 1.1 + t * 0.7) + t * 0.5) + sin(q.y * 1.5 + 1.4 * sin(q.x * 0.9 - t * 0.6) - t * 0.35) + sin((q.x + q.y) * 0.9 + 1.2 * sin((q.x - q.y) * 0.8 + t * 0.5));
-			ca = pow(1.0 - abs(ca) / 3.0, 7.0) * water_fx.y;
-			vec3 bed = c.rgb * (0.92 + 1.8 * ca * exp(-d * 1.6));
-			// absorption (red goes first) plus the light the water itself scatters back
-			float fog = 1.0 - exp(-d * 0.9);
-			vec3 col = bed * exp(-vec3(2.6, 0.75, 0.55) * d) + mix(vec3(0.10, 0.66, 0.70), vec3(0.02, 0.14, 0.42), smoothstep(0.3, 1.8, d)) * fog;
-			// slow light bands across the surface
-			float band = sin(w.x * 1.1 + w.y * 0.7 + t * 0.8) * sin(w.x * 0.5 - w.y * 1.3 - t * 0.6);
-			col *= 1.0 + 0.06 * band;
-			// rings around the player while wading
-			if (wader.w > 0.5) {
-				float r = length(w - wader.xy), ring = sin(r * 15.0 - TIME * 7.0) * (1.0 - smoothstep(0.25, 1.7, r)) * smoothstep(0.05, 0.3, r);
-				col += vec3(0.22, 0.26, 0.26) * max(ring, 0.0);
-			}
-			if (water_fx.z > 0.5) {
+			float s = d - water_lap(w, t), show = 0.0;
+			if (water_fx.z > 0.5 && water_fx.x > 0.5) {
 				// glints: a few splats flash white along the bright bands
-				float pick = step(0.93, fract(ph * 91.7)), tw = fract(ph * 7.31 + t * 0.33);
-				float gli = pick * smoothstep(0.0, 0.04, tw) * (1.0 - smoothstep(0.07, 0.13, tw)) * smoothstep(0.0, 0.5, band) * smoothstep(0.06, 0.2, d);
-				col = mix(col, vec3(1.0), gli * 0.95); size *= 1.0 + 0.6 * gli;
+				float band = sin(w.x * 1.1 + w.y * 0.7 + t * 0.8) * sin(w.x * 0.5 - w.y * 1.3 - t * 0.6);
+				float pick = step(0.5, fract(ph * 91.7)), tw = fract(ph * 7.31 + t * 0.33);
+				float gli = pick * smoothstep(0.0, 0.04, tw) * (1.0 - smoothstep(0.07, 0.13, tw)) * smoothstep(0.0, 0.5, band) * smoothstep(0.1, 0.24, d);
 				// foam: a solid line at the waterline, a broken one trailing behind it
 				float br = 0.5 + 0.5 * sin(w.x * 7.0 + w.y * 5.0 + t * 1.3) * sin(w.x * 3.1 - w.y * 6.3 - t * 0.9);
 				float f1 = 1.0 - smoothstep(0.004, 0.034, abs(s - 0.012) + 0.012 * br);
-				float f2 = (1.0 - smoothstep(0.0, 0.02, abs(s - 0.085 - 0.03 * sin(t * 0.6 + w.x * 0.8 + w.y * 0.5)))) * smoothstep(0.45, 0.8, br) * 0.55;
-				col = mix(col, vec3(0.97, 0.99, 1.0), clamp(f1 + f2, 0.0, 1.0));
+				float f2 = (1.0 - smoothstep(0.0, 0.014, abs(s - 0.085 - 0.03 * sin(t * 0.6 + w.x * 0.8 + w.y * 0.5)))) * smoothstep(0.6, 0.85, br) * step(0.45, fract(ph * 53.3));
+				show = max(gli, max(f1, f2));
+				if (gli > max(f1, f2)) { size *= 0.4; }   // a glint is a pinprick, foam is a full splat
 			}
-			// behind the waterline the sand is only wet
-			if (s < -0.004) { col = c.rgb * mix(0.74, 0.9, 1.0 - smoothstep(-0.06, -0.004, s)); }
-			c.rgb = col; p.y += sin(t * 1.1 + w.x * 1.7 + w.y * 1.3) * 0.012;
+			if (show < 0.5) { kill = true; }
+			c.rgb = vec3(0.97, 0.99, 1.0);
 		}
 	}
 	if (sw > 0.0) {
@@ -97,6 +122,11 @@ void vertex() {
 			}
 		}
 	}
+#endif
+#ifdef CREATURE
+	if (c.a < 0.5) { c.rgb = water_tint(c.rgb, p); }   // legs in the water
+#else
+	if (g != 5.0 && c.a < 0.5) { c.rgb = water_tint(c.rgb, p); }
 #endif
 	vec4 vc = MODELVIEW_MATRIX * vec4(p, 1.0);
 	float R = 0.5 * size * size_mul;

@@ -33,7 +33,7 @@ Windows will warn about an unknown publisher the first time, because the file is
 | G | Auto detail on or off |
 | B | Soft blend or opaque splats |
 | P | Palette on or off |
-| 3 | New water or the old flat water |
+| 3 | See-through water or the old flat water |
 | 4 | Caustics on or off |
 | 5 | Foam and glints on or off |
 
@@ -66,20 +66,23 @@ The top-left readout shows frame rate, frame time, detail, blend mode, splats dr
 
 ## Water
 
-The lake is drawn by the same splats as everything else. Each water splat stores the colour of the lakebed under it and the depth there, and the shader works out what that looks like through the water.
+The water is see-through, and it is not drawn at all. The lake has a real bed with rocks, corals and sea plants standing on it, and the shader tints anything below the waterline by how deep it is. That is why you can see the bed, and why the player's legs change colour when wading.
 
 | Part | What it does |
 |---|---|
-| Depth colour | Red light is absorbed first, so pale sand turns turquoise in the shallows and deep blue in the hole |
-| Lakebed | Sand at the shore, then rock, weed and a few corals, visible through shallow water |
-| Caustics | Moving light lines on the bed, fading with depth |
-| Foam | A solid line where the water meets the sand and a broken one behind it. The waterline moves in and out, leaving wet sand |
-| Glints | A few splats flash white along the bright bands |
+| Depth tint | Red light is absorbed first, so things turn turquoise in the shallows and fade to deep blue in the hole |
+| Lakebed | Sand that follows the terrain, with weedy patches, and a deep hole in the middle |
+| On the bed | Rocks (a few break the surface), cauliflower and fan corals, sea grass that sways, tall kelp on the walls of the hole |
+| Caustics | Moving light lines on whatever is under water, fading with depth |
+| Foam and glints | A thin layer of surface splats that the shader only shows as foam at the waterline or as pinprick glints |
+| Waterline | Moves in and out, leaving wet sand behind it |
 | Wading | Rings spread from the player while standing in water |
 
-The water code is the `g == 5.0` block in `shaders/splat.gdshaderinc`. `tools/bake_water.py` is the one-off script that rewrote the lake's splats, dug the deep hole and refitted the palette; it has already been run on the data in this folder.
+Key 3 switches to the old flat, opaque blue for comparison.
 
-Not there yet: reflections, a sky to reflect, waves that move the surface, splashes, and anything for the open sea.
+The water code is `water_tint()` and the `g == 5.0` block in `shaders/splat.gdshaderinc`. `tools/bake_water.py` is the script that rebuilt the lake (bed, props, surface layer, palette) from the original export; it has already been run on the data in this folder.
+
+Not there yet: reflections, a sky to reflect, waves that move the surface, splashes, fish, and anything for the open sea. The tint uses straight-down depth, not the true distance through the water, so steep viewing angles are slightly too clear.
 
 ## Data (`data/`)
 
@@ -88,8 +91,8 @@ Exported from the browser build.
 | File | Contents |
 |---|---|
 | `world_pos.bin` | Splat positions, three floats each |
-| `world_col.bin` | Colour and glow flag, four bytes each. For water splats the colour is the lakebed's |
-| `world_misc.bin` | Sway, group, size, phase, four bytes each. For water splats the sway slot holds depth |
+| `world_col.bin` | Colour and glow flag, four bytes each |
+| `world_misc.bin` | Sway, group, size, phase, four bytes each. For the lake's surface splats (group 5) the sway slot holds depth |
 | `world_nrm.bin` | Facing direction and shape code, four signed bytes each |
 | `world.json` | Map cells, palette, ground height grid, water level |
 | `calf.bin`, `calf.json` | The calf's splats, bones and joint positions |

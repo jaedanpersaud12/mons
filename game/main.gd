@@ -81,6 +81,11 @@ func _ready() -> void:
 	_load_hero()
 	if start_at.size() == 2:
 		pl.x = start_at[0]; pl.z = start_at[1]; pl.y = height(pl.x, pl.z); cam_t = Vector3(pl.x, pl.y + 0.9, pl.z)
+	var pond: Array = meta.get("pond", [7.0, 6.0, 7.5, 5.0])
+	for mats in [world_mats, crit_mats, hero_mats]:
+		_set_param(mats, "pond", Vector4(pond[0], pond[1], pond[2], pond[3]))
+		_set_param(mats, "pond_zone", float(meta.get("pond_zone", 1.5)))
+		_set_param(mats, "water_y", float(meta["water"]))
 	_apply_blend()
 	print("loaded in ", Time.get_ticks_msec() - t0, " ms, adapter: ", RenderingServer.get_video_adapter_name())
 
@@ -377,8 +382,10 @@ func _process(dt: float) -> void:
 	if force.size() == 4: pl.amt = force[0]; pl.phase = force[1] * TAU; pl.air = force[2]; pl.jy = force[2] * 0.5; pl.yaw = force[3]; pl.vx = 0.0; pl.vz = 0.0
 	_step_calf(dt); _pose_calf(t_now); _pose_hero(t_now)
 	_set_param(world_mats, "wind_t", wind_t)
-	_set_param(world_mats, "water_fx", water_fx)
-	_set_param(world_mats, "wader", Vector4(pl.x, pl.z, 0.0, 1.0 if height(pl.x, pl.z) < float(meta["water"]) + 0.02 and pl.jy < 0.05 else 0.0))
+	var wet := world_mats + crit_mats + hero_mats   # everything that can be under water
+	_set_param(wet, "water_t", wind_t)
+	_set_param(wet, "water_fx", water_fx)
+	_set_param(wet, "wader", Vector4(pl.x, pl.z, 0.0, 1.0 if height(pl.x, pl.z) < float(meta["water"]) + 0.02 and pl.jy < 0.05 else 0.0))
 	# camera: follows the player with a little lead, eases to a stop, pulls back when running. Q and E turn, the wheel zooms
 	if Input.is_key_pressed(KEY_Q): cam_yaw -= dt * 1.6
 	if Input.is_key_pressed(KEY_E): cam_yaw += dt * 1.6
@@ -397,7 +404,7 @@ func _process(dt: float) -> void:
 			if fps < 55.0 and detail > 0.75: detail = 0.5; _apply_detail(); ft_hold = 8.0
 			elif fps > 110.0 and detail < 0.75: detail = 1.0; _apply_detail(); ft_hold = 8.0
 		var drawn: int = world_total[0] + (world_total[1] if detail > 0.75 else 0)
-		fps_label.text = "%d fps  %.1f ms   %s detail%s   %s   %.2fM world splats   %d draw calls\n1/2 detail   G auto detail   B blend   P palette   3 new water   4 caustics   5 foam   WASD walk   Shift run   Space jump   Q/E turn" % [
+		fps_label.text = "%d fps  %.1f ms   %s detail%s   %s   %.2fM world splats   %d draw calls\n1/2 detail   G auto detail   B blend   P palette   3 clear water   4 caustics   5 foam   WASD walk   Shift run   Space jump   Q/E turn" % [
 			Engine.get_frames_per_second(), 1000.0 / maxf(fps, 0.01), "full" if detail > 0.75 else "half", " (auto)" if auto_detail else "", "soft blend" if blend else "opaque", drawn / 1000000.0,
 			RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME)]
 	if shot_path != "" and frame_n == shot_frame:
