@@ -86,7 +86,8 @@ export type TypesData = {
 };
 export type Cell = "strong" | "weak" | "none" | "absorb";
 export type ChartData = { cells: Record<string, Cell> };
-export type Island = { element?: string; biome?: string; inspiration?: string; stone?: string; mons?: string };
+/** `island` is the landmass the slot sits on. Several sources can share one island. */
+export type Island = { element?: string; island?: string; biome?: string; inspiration?: string; stone?: string; mons?: string };
 export type IslandsData = { islands: Record<string, Island> };
 export type FieldsData = Record<string, string | string[] | Record<string, string>>;
 
@@ -199,12 +200,15 @@ export function objectivesFor(quest: Quest, data: unknown, ctx: Ctx): Objective[
   const biomes = all.filter((x) => !!x.i.biome?.trim()).length;
   const rels = all.filter((x) => islandRelDone(x.s, x.i)).length;
   const insp = all.filter((x) => !!x.i.inspiration?.trim()).length;
+  const placed = sources.filter((x) => !!x.i.island?.trim()).length;
+  const lands = new Set(sources.map((x) => x.i.island?.trim().toLowerCase()).filter(Boolean)).size;
   const tier1 = sources.filter((x) => x.s.group === "Tier 1").map((x) => x.i.element);
   return [
     { id: "el", label: "Every source island has an element", done: els.length === sources.length, detail: `${els.length}/${sources.length}` },
     { id: "uniq", label: "No element used twice", done: els.length > 0 && new Set(els).size === els.length },
     { id: "tier1", label: "Tier 1 is Water, Plant and Fire", done: STARTER_ELEMENTS.every((e) => tier1.includes(e)) },
-    { id: "biome", label: "Every island has a biome", done: biomes === total, detail: `${biomes}/${total}` },
+    { id: "land", label: "Every source is placed on an island", done: placed === sources.length, detail: `${placed}/${sources.length} on ${lands} islands` },
+    { id: "biome", label: "Every stop has a biome", done: biomes === total, detail: `${biomes}/${total}` },
     { id: "rel", label: "Every island has its stone and mons relationship", done: rels === total, detail: `${rels}/${total}` },
     { id: "variety", label: "At least 4 different stone relationships", done: new Set(sources.map((x) => x.i.stone).filter(Boolean)).size >= 4, bonus: true },
     { id: "insp", label: "Every island has an inspiration", done: insp === total, bonus: true },
@@ -254,7 +258,7 @@ export function widgetAnswer(quest: Quest, data: unknown, ctx: Ctx): string {
       const i = islands[s.id] ?? {};
       const name = s.group === s.label || s.fixed ? s.label : `${s.group}, ${s.label}`;
       if (s.noStone) return `- ${name}: no stone, ${i.biome ?? "?"} (mons: ${i.mons ?? "?"})`;
-      return `- ${name}: ${i.element ?? "?"}, ${i.biome ?? "?"} (stone: ${i.stone ?? "?"}; mons: ${i.mons ?? "?"})`;
+      return `- ${name}: ${i.element ?? "?"}${i.island?.trim() ? ` on ${i.island.trim()}` : ""}, ${i.biome ?? "?"} (stone: ${i.stone ?? "?"}; mons: ${i.mons ?? "?"})`;
     }).join("\n")
   );
 }
@@ -306,13 +310,14 @@ export function widgetOutput(quest: Quest, data: unknown, ctx: Ctx): string | nu
     const { islands } = asIslands(data);
     return (
       head("Islands: the skeleton") +
-      "| Slot | Element | Biome | Inspiration | Stone | Mons |\n|---|---|---|---|---|---|\n" +
+      "| Slot | Element | Island | Biome | Inspiration | Stone | Mons |\n|---|---|---|---|---|---|---|\n" +
       ISLAND_SLOTS.map((s) => {
         const i = islands[s.id] ?? {};
         const slot = s.fixed ? s.label : `${s.group}, ${s.label}`;
-        if (s.noStone) return `| ${slot} | No stone | ${i.biome ?? ""} | ${i.inspiration ?? ""} | None | ${i.mons ?? ""} |`;
-        return `| ${slot} | ${i.element ?? ""} | ${i.biome ?? ""} | ${i.inspiration ?? ""} | ${i.stone ?? ""} | ${i.mons ?? ""} |`;
+        if (s.noStone) return `| ${slot} | No stone | ${i.island ?? "Home"} | ${i.biome ?? ""} | ${i.inspiration ?? ""} | None | ${i.mons ?? ""} |`;
+        return `| ${slot} | ${i.element ?? ""} | ${i.island ?? ""} | ${i.biome ?? ""} | ${i.inspiration ?? ""} | ${i.stone ?? ""} | ${i.mons ?? ""} |`;
       }).join("\n") +
+      "\n\nSlots are sources, not islands: several sources can share one island, and each boat upgrade opens a new part of an island you have already visited." +
       "\n\nHome has no source and no stone. Tier 1 holds the starters' home islands: Water, Plant and Fire, in any order." +
       "\n\nStone and mons relationships are defined in `world/cultures-and-ecology.md`.\n"
     );

@@ -604,6 +604,9 @@ export function IslandsWidget({ value, onChange, types, disabled }: { value: unk
                           items={picks.map((t) => ({ value: t, label: t, hint: used.includes(t) && i.element !== t ? "used" : undefined }))}
                         />
                       )}
+                      {s.noStone ? null : (
+                        <input className={`${input} h-8 text-[12.5px]`} value={i.island ?? ""} disabled={disabled} onChange={(e) => set(s.id, { island: e.target.value })} placeholder="Island it sits on, e.g. The peak" aria-label="Island" />
+                      )}
                       <input className={`${input} h-8 text-[12.5px]`} value={i.biome ?? ""} disabled={disabled} onChange={(e) => set(s.id, { biome: e.target.value })} placeholder="Biome, e.g. reef shallows" aria-label="Biome" />
                       <input className={`${input} h-8 text-[12.5px]`} value={i.inspiration ?? ""} disabled={disabled} onChange={(e) => set(s.id, { inspiration: e.target.value })} placeholder="Inspiration (bonus)" aria-label="Inspiration" />
                       {s.noStone ? (
