@@ -100,3 +100,14 @@ Edit `game-docs/quests.json`. Each quest needs `id`, `title`, `layer` (`1`, `2`,
 UI micro-interactions are copied from [interior.dev](https://interior.dev) (MIT) into `components/interior/`: drawer, hold to confirm, loading button, progress bar, segmented control, task steps, tooltip group, value flash.
 
 Set `BIBLE_DIR` to point at a different docs folder.
+
+## MCP server
+
+`/api/mcp` is an MCP server (Streamable HTTP) so Claude can read and write the bible directly. Every write shows up live in open tabs.
+
+Tools: `bible_overview`, `list_quests`, `get_quest`, `list_docs`, `read_doc`, `search_docs`, `write_doc`, `edit_doc`, `add_note`, `remove_note`, `set_overall`, `set_quest_data`, `create_sheet`, `lock_quest`, `reopen_quest`, `add_quest`, `update_quest`.
+
+Auth: `MCP_TOKEN` (falls back to `APP_PASSCODE`), sent as `Authorization: Bearer <token>` or `?key=<token>`.
+
+- Claude Code: `claude mcp add --transport http bible https://<url>/api/mcp --header "Authorization: Bearer <token>"`
+- claude.ai: Settings → Connectors → Add custom connector → `https://<url>/api/mcp?key=<token>`

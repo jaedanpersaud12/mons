@@ -124,3 +124,22 @@ export async function putNotes(questId: string, value: QuestNotes, by?: string) 
   const empty = !value.overall.trim() && value.notes.length === 0 && value.data == null;
   await backend().putNote(questId, empty ? null : value, by);
 }
+
+/** Adds a new open quest. Used by the MCP server. */
+export async function addQuest(quest: Quest, by?: string) {
+  const data = await read();
+  if (data.quests.some((q) => q.id === quest.id)) throw new Error(`Quest ${quest.id} already exists`);
+  data.quests.push(quest);
+  await write(data, by);
+  return quest;
+}
+
+/** Changes an open quest's text fields. */
+export async function updateQuest(id: string, patch: Partial<Pick<Quest, "title" | "prompt" | "xp" | "context" | "layer">>, by?: string) {
+  const data = await read();
+  const quest = data.quests.find((q) => q.id === id);
+  if (!quest) throw new Error("Unknown quest");
+  Object.assign(quest, patch);
+  await write(data, by);
+  return quest;
+}

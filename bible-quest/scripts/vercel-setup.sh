@@ -14,6 +14,11 @@ if [ -z "${APP_PASSCODE:-}" ]; then
   printf '\nAPP_PASSCODE=%s\n' "$APP_PASSCODE" >> .env.local
 fi
 
+if ! grep -q "^MCP_TOKEN=" .env.local; then
+  printf 'MCP_TOKEN=%s\n' "$(openssl rand -hex 24)" >> .env.local
+  echo "→ Generated an MCP token in .env.local"
+fi
+
 echo "→ Installing packages"
 npm install --no-audit --no-fund
 
@@ -24,7 +29,7 @@ echo "→ Linking the Vercel project"
 npx vercel link --yes --project bible-quest
 
 echo "→ Setting production environment variables"
-for name in DATABASE_URL NEON_REALTIME_URL NEON_REALTIME_SECRET APP_PASSCODE; do
+for name in DATABASE_URL NEON_REALTIME_URL NEON_REALTIME_SECRET APP_PASSCODE MCP_TOKEN; do
   val=$(grep -m1 "^$name=" .env.local | cut -d= -f2-)
   [ -n "$val" ] || { echo "  $name missing from .env.local"; exit 1; }
   npx vercel env add "$name" --environment production --value "$val" --force --yes >/dev/null
@@ -33,3 +38,9 @@ done
 
 echo "→ Deploying"
 npx vercel deploy --prod
+
+TOKEN=$(grep -m1 "^MCP_TOKEN=" .env.local | cut -d= -f2-)
+echo
+echo "MCP server: https://<your-url>/api/mcp"
+echo "  Claude Code:  claude mcp add --transport http bible https://<your-url>/api/mcp --header \"Authorization: Bearer $TOKEN\""
+echo "  claude.ai:    Settings → Connectors → Add custom connector → https://<your-url>/api/mcp?key=$TOKEN"
