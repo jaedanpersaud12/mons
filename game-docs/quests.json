@@ -1,0 +1,1715 @@
+{
+  "version": 1,
+  "quests": [
+    {
+      "id": "theme",
+      "title": "Pick the theme",
+      "layer": "1",
+      "xp": 100,
+      "kind": "decision",
+      "prompt": "",
+      "status": "done",
+      "answer": "Doing the right thing the wrong way. Each generation is right about the danger and wrong about the method.",
+      "doneAt": "2026-11-15T21:30:00-04:00"
+    },
+    {
+      "id": "tone",
+      "title": "Set the tone",
+      "layer": "1",
+      "xp": 100,
+      "kind": "decision",
+      "prompt": "",
+      "status": "done",
+      "answer": "Light-hearted on the surface, serious underneath. The Avatar model. Characters joke, the world doesn't.",
+      "doneAt": "2026-11-15T21:30:00-04:00"
+    },
+    {
+      "id": "gimmick",
+      "title": "Choose the gimmick",
+      "layer": "1",
+      "xp": 100,
+      "kind": "decision",
+      "prompt": "",
+      "status": "done",
+      "answer": "Awakening, our Mega Evolution. 12 species in this region. Needs the species' stone plus a deep bond. One per battle. Not legendaries.",
+      "doneAt": "2026-11-15T21:30:00-04:00"
+    },
+    {
+      "id": "current",
+      "title": "Explain where the power comes from",
+      "layer": "1",
+      "xp": 100,
+      "kind": "decision",
+      "prompt": "",
+      "status": "done",
+      "answer": "The Current: elemental energy moves like water. Sources, land, creatures, release. Types come from biomes; evolution is the body growing to hold more.",
+      "doneAt": "2026-11-15T21:30:00-04:00"
+    },
+    {
+      "id": "history",
+      "title": "Make the backstory hold up",
+      "layer": "1",
+      "xp": 100,
+      "kind": "decision",
+      "prompt": "",
+      "status": "done",
+      "answer": "A century ago the ancestor forced creatures to hold the surge, out of desperation. An island was lost. The elders banned awakening; keepers gather the stones.",
+      "doneAt": "2026-11-15T21:30:00-04:00"
+    },
+    {
+      "id": "hook",
+      "title": "Choose the hook",
+      "layer": "1",
+      "xp": 100,
+      "kind": "decision",
+      "prompt": "",
+      "status": "done",
+      "answer": "A stranger, the heir, arrives at the gate, is refused, and that night steals the town's stones, the record, and one rescue.",
+      "doneAt": "2026-11-15T21:30:00-04:00"
+    },
+    {
+      "id": "warden",
+      "title": "Fix the professor problem",
+      "layer": "1",
+      "xp": 100,
+      "kind": "decision",
+      "prompt": "",
+      "status": "done",
+      "answer": "The warden runs a rescue station. The starters are rescues waiting to go home. You carry yours home along the route.",
+      "doneAt": "2026-11-15T21:30:00-04:00"
+    },
+    {
+      "id": "species-fix",
+      "title": "Make the 12 non-legendary",
+      "layer": "1",
+      "xp": 100,
+      "kind": "decision",
+      "prompt": "",
+      "status": "done",
+      "answer": "The 12 are ordinary species. Anyone bonded can awaken one. Keepers' stones are the badges. No separate bag.",
+      "doneAt": "2026-11-15T21:30:00-04:00"
+    },
+    {
+      "id": "rival",
+      "title": "Give the rival a reason",
+      "layer": "1",
+      "xp": 100,
+      "kind": "decision",
+      "prompt": "",
+      "status": "done",
+      "answer": "The warden's kid. Guilt over the theft, tempted by the heir mid-game, comes back. (Default)",
+      "doneAt": "2026-11-15T21:30:00-04:00"
+    },
+    {
+      "id": "crew",
+      "title": "Decide how light the heir's crew is",
+      "layer": "1",
+      "xp": 100,
+      "kind": "decision",
+      "prompt": "",
+      "status": "done",
+      "answer": "Mostly earnest islanders, plus a comic duo who switch sides. (Default)",
+      "doneAt": "2026-11-15T21:30:00-04:00"
+    },
+    {
+      "id": "structure",
+      "title": "Decide how travel works",
+      "layer": "1",
+      "xp": 100,
+      "kind": "decision",
+      "prompt": "",
+      "status": "done",
+      "answer": "The sea is the overworld, your boat the traversal. Fixed story islands with open tiers between, any order. Keepers scale to stones held. (Default)",
+      "doneAt": "2026-11-15T21:30:00-04:00"
+    },
+    {
+      "id": "confirm-defaults",
+      "title": "Confirm the Defaults in 11-story.md",
+      "layer": "1",
+      "xp": 50,
+      "kind": "decision",
+      "prompt": "Read every item marked Default in 11-story.md. Keep it, change it, or flag it. Write what you changed.",
+      "file": "11-story.md",
+      "status": "done",
+      "context": [
+        "11-story.md?match=Default"
+      ],
+      "answer": "Overall awakening rules are good\nWe need a little more cast, I want this world to feel ALIVE, let's add RDr2 to our concepts for reference.\neverything else is good\n- Tone rules (Default) \u203a *The characters joke; the world doesn't. Mum, the rival, townsfolk and the creatures' pe\u2026*: **Note**. We don't need to try too hard with humor. Maybe we can try some jokes and see how it feels.\n- Tone rules (Default) \u203a *Show the serious side, don't announce it. A keeper who guards a stone and can't remembe\u2026*: **Note**. Very important we show rather than tell. Story-telling 101\n- Tone rules (Default) \u203a *The seriousness lands through creatures. The stolen starter's forced form is the moment\u2026*: **Change**. Shouln't be stop smiling forever of course. its a moment to take it in but darker tones should be understood from the jump but not pushed you know. Like the real world. Thats just how things are.\n- Tone rules (Default) \u203a *Nobody is evil for fun. The heir is grieving and certain. His crew believe him.*: **Change**. Sometimes there are just assholes.\n- 7. The rival (Default) \u203a *The guilt makes them want a shortcut. Mid-game the heir's offer tempts them, and they s\u2026*: **Change**. IDK",
+      "doneAt": "2026-11-16T02:49:31.220Z",
+      "widget": {
+        "type": "review"
+      }
+    },
+    {
+      "id": "types",
+      "title": "Pick the type list",
+      "layer": "2",
+      "xp": 100,
+      "kind": "decision",
+      "prompt": "Split the types in two. Main types are real-world elements a mon absorbs. Secondary types come from where it lives inside its biome. Then mark the 12 mains that get an island.",
+      "status": "open",
+      "context": [
+        "11-story.md#What the rule explains",
+        "03-world-and-maps.md#Biomes",
+        "05-starters.md#Type notes",
+        "01-game-bible.md#7. Battles and catching"
+      ],
+      "widget": {
+        "type": "types"
+      },
+      "output": "world/types.md"
+    },
+    {
+      "id": "type-chart",
+      "title": "Write the type chart",
+      "layer": "2",
+      "xp": 200,
+      "kind": "decision",
+      "prompt": "Set who beats whom. Rows attack, columns defend. The chart builds itself from your type list.",
+      "status": "open",
+      "context": [
+        "11-story.md#What the rule explains",
+        "05-starters.md#Type notes",
+        "01-game-bible.md#6. Starters"
+      ],
+      "widget": {
+        "type": "chart"
+      },
+      "output": "world/type-chart.md"
+    },
+    {
+      "id": "region",
+      "title": "Set the region's inspiration and feel",
+      "layer": "2",
+      "xp": 50,
+      "kind": "decision",
+      "prompt": "Tropical island chain, Caribbean inspired with a light touch. What else feeds it? Climate, sea, size, how far apart the islands are.",
+      "status": "open",
+      "context": [
+        "01-game-bible.md#4. World",
+        "03-world-and-maps.md#Region theme",
+        "03-world-and-maps.md#The coastal town"
+      ],
+      "widget": {
+        "type": "fields",
+        "fields": [
+          {
+            "id": "layout",
+            "label": "How close are the islands?",
+            "type": "choice",
+            "allowCustom": false,
+            "options": [
+              {
+                "label": "Close",
+                "hint": "You can see the next island from the shore"
+              },
+              {
+                "label": "Spread out",
+                "hint": "Open sea between every island"
+              },
+              {
+                "label": "Clusters",
+                "hint": "Tight groups with long crossings between them"
+              }
+            ]
+          },
+          {
+            "id": "inspiration",
+            "label": "What feeds the look, beyond a light Caribbean touch?",
+            "type": "multi",
+            "allowCustom": true,
+            "options": [
+              {
+                "label": "Caribbean"
+              },
+              {
+                "label": "Polynesia and the Pacific"
+              },
+              {
+                "label": "Southeast Asian archipelagos"
+              },
+              {
+                "label": "Mediterranean islands"
+              },
+              {
+                "label": "Gal\u00e1pagos"
+              }
+            ]
+          },
+          {
+            "id": "sea",
+            "label": "What is the sea like?",
+            "type": "choice",
+            "allowCustom": false,
+            "options": [
+              {
+                "label": "Calm and turquoise",
+                "hint": "Sailing is a rest between islands"
+              },
+              {
+                "label": "Gets rougher by tier",
+                "hint": "The sea itself is the difficulty curve"
+              },
+              {
+                "label": "Dangerous everywhere",
+                "hint": "The sea is a place you survive"
+              }
+            ]
+          },
+          {
+            "id": "extra",
+            "label": "Anything else that defines the region",
+            "type": "text",
+            "lines": 3,
+            "optional": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "island-skeleton",
+      "title": "Island skeleton: 12 lines",
+      "layer": "2",
+      "xp": 200,
+      "kind": "decision",
+      "prompt": "Fill the board: 12 islands, each with an element, a biome, and how it treats its stone and its mons.",
+      "status": "open",
+      "context": [
+        "11-story.md#10. Structure",
+        "11-story.md#9. The twelve awakening species",
+        "world/cultures-and-ecology.md#3. How each island relates to its stone",
+        "world/cultures-and-ecology.md#4. How each island relates to its mons",
+        "03-world-and-maps.md#Biomes",
+        "world/cultures-and-ecology.md#1. The chain",
+        "world/cultures-and-ecology.md#7. Each island's local problem"
+      ],
+      "widget": {
+        "type": "islands"
+      },
+      "output": "world/islands-skeleton.md"
+    },
+    {
+      "id": "culture-framework",
+      "title": "Lock the culture framework",
+      "layer": "2",
+      "xp": 150,
+      "kind": "decision",
+      "prompt": "How islands, mons and people shape each other. Note each part right where it is: keep, change or question.",
+      "status": "open",
+      "context": [
+        "world/cultures-and-ecology.md"
+      ],
+      "widget": {
+        "type": "review"
+      }
+    },
+    {
+      "id": "starter-homes",
+      "title": "Place the starters' home islands",
+      "layer": "2",
+      "xp": 50,
+      "kind": "decision",
+      "prompt": "Suggested: wader's coast in tier 1, bat's forest in tier 2, bull's volcano in tier 3.",
+      "status": "open",
+      "context": [
+        "11-story.md#Home chapters",
+        "05-starters.md#Fire: the bull line",
+        "05-starters.md#Water: the wader line",
+        "05-starters.md#Plant: the bat line"
+      ],
+      "widget": {
+        "type": "fields",
+        "fields": [
+          {
+            "id": "homes",
+            "label": "Where does each starter line live?",
+            "type": "assign",
+            "unique": true,
+            "hint": "Each starter's home island is where it chooses you. Different tiers means each starter pays off at a different point.",
+            "rows": [
+              {
+                "label": "Water wader",
+                "hint": "Coast, shallows"
+              },
+              {
+                "label": "Plant bat",
+                "hint": "Forest"
+              },
+              {
+                "label": "Fire bull",
+                "hint": "Volcanic mountains"
+              }
+            ],
+            "options": [
+              {
+                "label": "Tier 1",
+                "hint": "First islands"
+              },
+              {
+                "label": "Tier 2",
+                "hint": "Mid-game"
+              },
+              {
+                "label": "Tier 3",
+                "hint": "Late game"
+              }
+            ]
+          },
+          {
+            "id": "why",
+            "label": "Why this order?",
+            "type": "text",
+            "lines": 2,
+            "optional": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "lost-element",
+      "title": "Pick the ruined island's element",
+      "layer": "2",
+      "xp": 50,
+      "kind": "decision",
+      "prompt": "Which element ran wild a century ago? It shapes the wound's symptoms and the lost species.",
+      "status": "open",
+      "context": [
+        "11-story.md#About 100 years ago",
+        "11-story.md#Now",
+        "11-story.md#Act 4"
+      ],
+      "widget": {
+        "type": "fields",
+        "fields": [
+          {
+            "id": "element",
+            "label": "Which element ran wild a century ago?",
+            "type": "choice",
+            "allowCustom": true,
+            "optionsFrom": "types",
+            "hint": "It decides what the wound looks like and what the lost species is."
+          },
+          {
+            "id": "symptoms",
+            "label": "What does the wound look like on other islands because of it?",
+            "type": "text",
+            "lines": 2,
+            "placeholder": "Ash drifting, reefs bleaching\u2026"
+          },
+          {
+            "id": "species",
+            "label": "First idea for the lost species",
+            "type": "text",
+            "lines": 2,
+            "optional": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "fire-second-type",
+      "title": "Settle the fire line's second type",
+      "layer": "2",
+      "xp": 50,
+      "kind": "decision",
+      "prompt": "Planned as Fire/Ground, since called fire and rock bulls.",
+      "status": "open",
+      "context": [
+        "05-starters.md#Fire: the bull line",
+        "05-starters.md#Type notes"
+      ],
+      "widget": {
+        "type": "fields",
+        "fields": [
+          {
+            "id": "type",
+            "label": "The fire bull line's second type",
+            "type": "choice",
+            "allowCustom": true,
+            "options": [
+              {
+                "label": "Rock",
+                "hint": "Second main: fire meets stone. You've been calling them fire rock bulls"
+              },
+              {
+                "label": "Ground",
+                "hint": "Second main: the original plan"
+              },
+              {
+                "label": "Beast",
+                "hint": "Secondary: big herd animal"
+              },
+              {
+                "label": "Armored",
+                "hint": "Secondary: the lava bull's rock plates"
+              },
+              {
+                "label": "Stays pure Fire"
+              }
+            ],
+            "hint": "The volcano is where fire meets stone, so a second main type fits. A secondary would say how it lives there instead."
+          },
+          {
+            "id": "when",
+            "label": "When does it gain it?",
+            "type": "choice",
+            "allowCustom": false,
+            "options": [
+              {
+                "label": "At stage 2"
+              },
+              {
+                "label": "Only the final stage"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "true-antagonist",
+      "title": "Choose the true antagonist",
+      "layer": "2",
+      "xp": 150,
+      "kind": "decision",
+      "prompt": "Who is really behind the storm, and why?",
+      "status": "open",
+      "context": [
+        "11-story.md#14. The switch-up",
+        "11-story.md#5. History",
+        "11-story.md#Tone rules"
+      ],
+      "widget": {
+        "type": "fields",
+        "fields": [
+          {
+            "id": "who",
+            "label": "Who is really behind the storm?",
+            "type": "choice",
+            "allowCustom": true,
+            "options": [
+              {
+                "label": "Someone inside the heir's crew",
+                "hint": "His adviser or backer, who taught him the forced method knowing it feeds the storm"
+              },
+              {
+                "label": "A disaster profiteer",
+                "hint": "Outside money. Wants the islands wrecked so they can buy and rebuild them"
+              },
+              {
+                "label": "A power seeker",
+                "hint": "Wants the ban broken for good so the strongest rule"
+              },
+              {
+                "label": "Someone at home",
+                "hint": "An elder or keeper who has known all along"
+              }
+            ]
+          },
+          {
+            "id": "why",
+            "label": "Why do they want it?",
+            "type": "multi",
+            "allowCustom": true,
+            "options": [
+              {
+                "label": "Profit",
+                "hint": "Own what's left"
+              },
+              {
+                "label": "Power",
+                "hint": "Raw Current makes forced forms far stronger"
+              },
+              {
+                "label": "Belief",
+                "hint": "They think the islands deserve it, or that the surge is natural and right"
+              },
+              {
+                "label": "Revenge",
+                "hint": "An old grudge against the keepers or an island"
+              }
+            ]
+          },
+          {
+            "id": "history",
+            "label": "Were they, or people like them, behind the first disaster too?",
+            "type": "choice",
+            "allowCustom": false,
+            "options": [
+              {
+                "label": "Yes",
+                "hint": "The same hand pushed the ancestor"
+              },
+              {
+                "label": "No",
+                "hint": "This is new"
+              },
+              {
+                "label": "Leave it a mystery"
+              }
+            ]
+          },
+          {
+            "id": "kind",
+            "label": "What kind of villain?",
+            "type": "choice",
+            "allowCustom": false,
+            "options": [
+              {
+                "label": "Has reasons",
+                "hint": "You understand them, even if you hate it"
+              },
+              {
+                "label": "Just a jerk",
+                "hint": "Tone rule 5: sometimes there are just jerks"
+              }
+            ]
+          },
+          {
+            "id": "idea",
+            "label": "Any first image of them?",
+            "type": "text",
+            "lines": 2,
+            "optional": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "heir-switch",
+      "title": "Place the heir switch",
+      "layer": "2",
+      "xp": 100,
+      "kind": "decision",
+      "prompt": "When and how does the heir come over to your side, and what does it cost him? The Reveal island is the natural spot.",
+      "status": "open",
+      "context": [
+        "11-story.md#14. The switch-up",
+        "11-story.md#10. Structure",
+        "11-story.md#Act 3",
+        "11-story.md#Act 4"
+      ],
+      "widget": {
+        "type": "fields",
+        "fields": [
+          {
+            "id": "when",
+            "label": "When does the heir come over?",
+            "type": "choice",
+            "allowCustom": true,
+            "options": [
+              {
+                "label": "At the Reveal island",
+                "hint": "The natural spot: 'he is right' becomes 'he is being used'"
+              },
+              {
+                "label": "Earlier, at the Midpoint",
+                "hint": "Right after the forced starter fight"
+              },
+              {
+                "label": "Late, on the ruined island",
+                "hint": "He turns at the last moment"
+              }
+            ]
+          },
+          {
+            "id": "how",
+            "label": "What turns him?",
+            "type": "multi",
+            "allowCustom": true,
+            "options": [
+              {
+                "label": "He learns he's been used"
+              },
+              {
+                "label": "He sees what forcing did to the stolen starter"
+              },
+              {
+                "label": "You beat him and spare him"
+              },
+              {
+                "label": "His own crew turns on him"
+              }
+            ]
+          },
+          {
+            "id": "cost",
+            "label": "What does it cost him?",
+            "type": "multi",
+            "allowCustom": true,
+            "options": [
+              {
+                "label": "His crew splits"
+              },
+              {
+                "label": "The creature he forced is lost or won't trust him"
+              },
+              {
+                "label": "He can never awaken a creature himself"
+              },
+              {
+                "label": "His family's name stays cursed"
+              },
+              {
+                "label": "Nothing yet: he pays at the end"
+              }
+            ]
+          },
+          {
+            "id": "first",
+            "label": "What's the first thing he does on your side?",
+            "type": "text",
+            "lines": 2,
+            "optional": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "rival-arc",
+      "title": "Settle the rival's arc",
+      "layer": "2",
+      "xp": 100,
+      "kind": "decision",
+      "prompt": "You weren't sure about the rival being tempted by the heir. With the switch-up, who tempts them, if anyone, and how do they come back?",
+      "status": "open",
+      "context": [
+        "11-story.md#7. The rival",
+        "11-story.md#14. The switch-up"
+      ],
+      "widget": {
+        "type": "fields",
+        "fields": [
+          {
+            "id": "tempted",
+            "label": "Who tempts the rival, if anyone?",
+            "type": "choice",
+            "allowCustom": true,
+            "options": [
+              {
+                "label": "The true antagonist",
+                "hint": "After the heir switches, the shortcut comes from them"
+              },
+              {
+                "label": "The heir, before he switches",
+                "hint": "The original plan"
+              },
+              {
+                "label": "Nobody",
+                "hint": "They stay loyal and struggle in another way"
+              }
+            ]
+          },
+          {
+            "id": "return",
+            "label": "What brings them back?",
+            "type": "choice",
+            "allowCustom": true,
+            "options": [
+              {
+                "label": "Their starter refuses to be forced"
+              },
+              {
+                "label": "They see what forcing does"
+              },
+              {
+                "label": "You talk them down"
+              },
+              {
+                "label": "They never leave"
+              }
+            ]
+          },
+          {
+            "id": "drive",
+            "label": "What keeps them going after their starter is home?",
+            "type": "multi",
+            "allowCustom": true,
+            "options": [
+              {
+                "label": "Getting the stolen rescue back"
+              },
+              {
+                "label": "Guilt over the theft"
+              },
+              {
+                "label": "Proving themselves to the warden"
+              },
+              {
+                "label": "Not wanting you to do it alone"
+              }
+            ]
+          },
+          {
+            "id": "extra",
+            "label": "Anything else about them",
+            "type": "text",
+            "lines": 2,
+            "optional": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "island-home",
+      "title": "Home island sheet",
+      "layer": "3a",
+      "xp": 100,
+      "kind": "sheet",
+      "prompt": "Fill in the island sheet: keeper, culture, mons, its own story, sign of the wound.",
+      "file": "islands/home.md",
+      "template": "island",
+      "status": "open",
+      "context": [
+        "03-world-and-maps.md#The coastal town",
+        "11-story.md#Act 1",
+        "06-hero-and-cutscenes.md#The intro",
+        "world/cultures-and-ecology.md#1. The chain",
+        "world/cultures-and-ecology.md#7. Each island's local problem"
+      ]
+    },
+    {
+      "id": "island-tier1-a",
+      "title": "Tier 1, island A sheet",
+      "layer": "3a",
+      "xp": 100,
+      "kind": "sheet",
+      "prompt": "Fill in the island sheet: keeper, culture, mons, its own story, sign of the wound.",
+      "file": "islands/tier1-a.md",
+      "template": "island",
+      "status": "open",
+      "context": [
+        "11-story.md#Rules",
+        "11-story.md#9. The twelve awakening species",
+        "11-story.md#Tone rules",
+        "world/cultures-and-ecology.md#1. The chain",
+        "world/cultures-and-ecology.md#7. Each island's local problem"
+      ]
+    },
+    {
+      "id": "island-tier1-b",
+      "title": "Tier 1, island B sheet",
+      "layer": "3a",
+      "xp": 100,
+      "kind": "sheet",
+      "prompt": "Fill in the island sheet: keeper, culture, mons, its own story, sign of the wound.",
+      "file": "islands/tier1-b.md",
+      "template": "island",
+      "status": "open",
+      "context": [
+        "11-story.md#Rules",
+        "11-story.md#9. The twelve awakening species",
+        "11-story.md#Tone rules",
+        "world/cultures-and-ecology.md#1. The chain",
+        "world/cultures-and-ecology.md#7. Each island's local problem"
+      ]
+    },
+    {
+      "id": "island-tier1-c",
+      "title": "Tier 1, island C sheet",
+      "layer": "3a",
+      "xp": 100,
+      "kind": "sheet",
+      "prompt": "Fill in the island sheet: keeper, culture, mons, its own story, sign of the wound.",
+      "file": "islands/tier1-c.md",
+      "template": "island",
+      "status": "open",
+      "context": [
+        "11-story.md#Rules",
+        "11-story.md#9. The twelve awakening species",
+        "11-story.md#Tone rules",
+        "world/cultures-and-ecology.md#1. The chain",
+        "world/cultures-and-ecology.md#7. Each island's local problem"
+      ]
+    },
+    {
+      "id": "island-midpoint",
+      "title": "Midpoint island sheet",
+      "layer": "3a",
+      "xp": 100,
+      "kind": "sheet",
+      "prompt": "Fill in the island sheet: keeper, culture, mons, its own story, sign of the wound.",
+      "file": "islands/midpoint.md",
+      "template": "island",
+      "status": "open",
+      "context": [
+        "11-story.md#Act 2",
+        "11-story.md#8. The starters",
+        "world/cultures-and-ecology.md#1. The chain",
+        "world/cultures-and-ecology.md#7. Each island's local problem"
+      ]
+    },
+    {
+      "id": "island-tier2-a",
+      "title": "Tier 2, island A sheet",
+      "layer": "3a",
+      "xp": 100,
+      "kind": "sheet",
+      "prompt": "Fill in the island sheet: keeper, culture, mons, its own story, sign of the wound.",
+      "file": "islands/tier2-a.md",
+      "template": "island",
+      "status": "open",
+      "context": [
+        "11-story.md#Rules",
+        "11-story.md#9. The twelve awakening species",
+        "11-story.md#Tone rules",
+        "world/cultures-and-ecology.md#1. The chain",
+        "world/cultures-and-ecology.md#7. Each island's local problem"
+      ]
+    },
+    {
+      "id": "island-tier2-b",
+      "title": "Tier 2, island B sheet",
+      "layer": "3a",
+      "xp": 100,
+      "kind": "sheet",
+      "prompt": "Fill in the island sheet: keeper, culture, mons, its own story, sign of the wound.",
+      "file": "islands/tier2-b.md",
+      "template": "island",
+      "status": "open",
+      "context": [
+        "11-story.md#Rules",
+        "11-story.md#9. The twelve awakening species",
+        "11-story.md#Tone rules",
+        "world/cultures-and-ecology.md#1. The chain",
+        "world/cultures-and-ecology.md#7. Each island's local problem"
+      ]
+    },
+    {
+      "id": "island-tier2-c",
+      "title": "Tier 2, island C sheet",
+      "layer": "3a",
+      "xp": 100,
+      "kind": "sheet",
+      "prompt": "Fill in the island sheet: keeper, culture, mons, its own story, sign of the wound.",
+      "file": "islands/tier2-c.md",
+      "template": "island",
+      "status": "open",
+      "context": [
+        "11-story.md#Rules",
+        "11-story.md#9. The twelve awakening species",
+        "11-story.md#Tone rules",
+        "world/cultures-and-ecology.md#1. The chain",
+        "world/cultures-and-ecology.md#7. Each island's local problem"
+      ]
+    },
+    {
+      "id": "island-reveal",
+      "title": "Reveal island sheet",
+      "layer": "3a",
+      "xp": 100,
+      "kind": "sheet",
+      "prompt": "Fill in the island sheet: keeper, culture, mons, its own story, sign of the wound.",
+      "file": "islands/reveal.md",
+      "template": "island",
+      "status": "open",
+      "context": [
+        "11-story.md#Act 3",
+        "world/cultures-and-ecology.md#1. The chain",
+        "world/cultures-and-ecology.md#7. Each island's local problem"
+      ]
+    },
+    {
+      "id": "island-tier3-a",
+      "title": "Tier 3, island A sheet",
+      "layer": "3a",
+      "xp": 100,
+      "kind": "sheet",
+      "prompt": "Fill in the island sheet: keeper, culture, mons, its own story, sign of the wound.",
+      "file": "islands/tier3-a.md",
+      "template": "island",
+      "status": "open",
+      "context": [
+        "11-story.md#Rules",
+        "11-story.md#9. The twelve awakening species",
+        "11-story.md#Tone rules",
+        "world/cultures-and-ecology.md#1. The chain",
+        "world/cultures-and-ecology.md#7. Each island's local problem"
+      ]
+    },
+    {
+      "id": "island-tier3-b",
+      "title": "Tier 3, island B sheet",
+      "layer": "3a",
+      "xp": 100,
+      "kind": "sheet",
+      "prompt": "Fill in the island sheet: keeper, culture, mons, its own story, sign of the wound.",
+      "file": "islands/tier3-b.md",
+      "template": "island",
+      "status": "open",
+      "context": [
+        "11-story.md#Rules",
+        "11-story.md#9. The twelve awakening species",
+        "11-story.md#Tone rules",
+        "world/cultures-and-ecology.md#1. The chain",
+        "world/cultures-and-ecology.md#7. Each island's local problem"
+      ]
+    },
+    {
+      "id": "island-ruined",
+      "title": "The ruined island sheet",
+      "layer": "3a",
+      "xp": 100,
+      "kind": "sheet",
+      "prompt": "Fill in the island sheet: keeper, culture, mons, its own story, sign of the wound.",
+      "file": "islands/ruined.md",
+      "template": "island",
+      "status": "open",
+      "context": [
+        "11-story.md#5. History",
+        "11-story.md#Act 4",
+        "world/cultures-and-ecology.md#1. The chain",
+        "world/cultures-and-ecology.md#7. Each island's local problem"
+      ]
+    },
+    {
+      "id": "people-and-mons",
+      "title": "Politics between islands",
+      "layer": "3a",
+      "xp": 150,
+      "kind": "sheet",
+      "prompt": "Trade, rivalries, who enforces the ban and who breaks it, who blames whom after the theft, and who would profit from a neighbour's ruin.",
+      "file": "world/island-politics.md",
+      "template": "system",
+      "status": "open",
+      "context": [
+        "world/cultures-and-ecology.md#5. Politics between islands",
+        "11-story.md#14. The switch-up",
+        "11-story.md#After the disaster"
+      ]
+    },
+    {
+      "id": "char-hero",
+      "title": "The hero sheet",
+      "layer": "3a",
+      "xp": 100,
+      "kind": "sheet",
+      "prompt": "Fill in the character sheet: want, need, flaw, arc, voice.",
+      "file": "characters/hero.md",
+      "template": "character",
+      "status": "open",
+      "context": [
+        "01-game-bible.md#8. Player character",
+        "06-hero-and-cutscenes.md#The hero",
+        "11-story.md#Act 1"
+      ]
+    },
+    {
+      "id": "char-mum",
+      "title": "Mum sheet",
+      "layer": "3a",
+      "xp": 100,
+      "kind": "sheet",
+      "prompt": "Fill in the character sheet: want, need, flaw, arc, voice.",
+      "file": "characters/mum.md",
+      "template": "character",
+      "status": "open",
+      "context": [
+        "11-story.md#6. Cast",
+        "06-hero-and-cutscenes.md#The intro"
+      ]
+    },
+    {
+      "id": "char-warden",
+      "title": "The warden sheet",
+      "layer": "3a",
+      "xp": 100,
+      "kind": "sheet",
+      "prompt": "Fill in the character sheet: want, need, flaw, arc, voice.",
+      "file": "characters/warden.md",
+      "template": "character",
+      "status": "open",
+      "context": [
+        "11-story.md#6. Cast",
+        "11-story.md#8. The starters"
+      ]
+    },
+    {
+      "id": "char-rival",
+      "title": "The rival sheet",
+      "layer": "3a",
+      "xp": 100,
+      "kind": "sheet",
+      "prompt": "Fill in the character sheet: want, need, flaw, arc, voice.",
+      "file": "characters/rival.md",
+      "template": "character",
+      "status": "open",
+      "context": [
+        "11-story.md#7. The rival",
+        "11-story.md#8. The starters",
+        "11-story.md#14. The switch-up"
+      ]
+    },
+    {
+      "id": "char-heir",
+      "title": "The heir sheet",
+      "layer": "3a",
+      "xp": 100,
+      "kind": "sheet",
+      "prompt": "Fill in the character sheet: want, need, flaw, arc, voice.",
+      "file": "characters/heir.md",
+      "template": "character",
+      "status": "open",
+      "context": [
+        "11-story.md#2. Theme",
+        "11-story.md#5. History",
+        "11-story.md#14. The switch-up"
+      ]
+    },
+    {
+      "id": "char-comic-duo",
+      "title": "The comic duo sheet",
+      "layer": "3a",
+      "xp": 100,
+      "kind": "sheet",
+      "prompt": "Fill in the character sheet: want, need, flaw, arc, voice.",
+      "file": "characters/comic-duo.md",
+      "template": "character",
+      "status": "open",
+      "context": [
+        "11-story.md#6. Cast",
+        "11-story.md#Tone rules"
+      ]
+    },
+    {
+      "id": "char-elders",
+      "title": "The elders sheet",
+      "layer": "3a",
+      "xp": 100,
+      "kind": "sheet",
+      "prompt": "Fill in the character sheet: want, need, flaw, arc, voice.",
+      "file": "characters/elders.md",
+      "template": "character",
+      "status": "open",
+      "context": [
+        "11-story.md#After the disaster",
+        "11-story.md#Act 1"
+      ]
+    },
+    {
+      "id": "char-true-antagonist",
+      "title": "The true antagonist sheet",
+      "layer": "3a",
+      "xp": 100,
+      "kind": "sheet",
+      "prompt": "Fill in the character sheet for whoever is pushing for the storm.",
+      "file": "characters/true-antagonist.md",
+      "template": "character",
+      "status": "open",
+      "context": [
+        "11-story.md#14. The switch-up",
+        "11-story.md#Tone rules"
+      ]
+    },
+    {
+      "id": "supporting-cast",
+      "title": "Supporting cast: who lives where",
+      "layer": "3a",
+      "xp": 150,
+      "kind": "sheet",
+      "prompt": "The world has to feel alive. For each island, a handful of people with routines, small stories and opinions. RDR2 is the reference.",
+      "file": "characters/supporting-cast.md",
+      "template": "system",
+      "status": "open",
+      "context": [
+        "11-story.md#6. Cast",
+        "11-story.md#3. Tone",
+        "11-story.md#11. Ideas taken"
+      ]
+    },
+    {
+      "id": "mum-secret",
+      "title": "Decide Mum's secret",
+      "layer": "3a",
+      "xp": 50,
+      "kind": "decision",
+      "prompt": "Does she know the history? The cottage has a parents' bedroom but only Mum appears.",
+      "status": "open",
+      "context": [
+        "11-story.md#6. Cast",
+        "06-hero-and-cutscenes.md#The intro"
+      ],
+      "widget": {
+        "type": "fields",
+        "fields": [
+          {
+            "id": "knows",
+            "label": "How much does Mum know?",
+            "type": "choice",
+            "allowCustom": false,
+            "options": [
+              {
+                "label": "Everything"
+              },
+              {
+                "label": "A little, and she's scared of it"
+              },
+              {
+                "label": "Nothing"
+              }
+            ]
+          },
+          {
+            "id": "dad",
+            "label": "Where is Dad?",
+            "type": "choice",
+            "allowCustom": true,
+            "options": [
+              {
+                "label": "A keeper who left",
+                "hint": "Ties to the old secret"
+              },
+              {
+                "label": "Lost at sea"
+              },
+              {
+                "label": "Just away",
+                "hint": "Not part of the story"
+              }
+            ]
+          },
+          {
+            "id": "scene",
+            "label": "The moment you'd find out",
+            "type": "text",
+            "lines": 2,
+            "optional": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "sys-battle",
+      "title": "Battle system",
+      "layer": "3b",
+      "xp": 150,
+      "kind": "sheet",
+      "prompt": "Reactive timing like Clair Obscur, or classic turns? Singles or doubles? Party size?",
+      "file": "systems/battle.md",
+      "template": "system",
+      "status": "open",
+      "context": [
+        "01-game-bible.md#7. Battles and catching",
+        "11-story.md#11. Ideas taken"
+      ]
+    },
+    {
+      "id": "sys-bond",
+      "title": "Bond system",
+      "layer": "3b",
+      "xp": 150,
+      "kind": "sheet",
+      "prompt": "How bond is measured, earned and lost. What it unlocks besides awakening.",
+      "file": "systems/bond.md",
+      "template": "system",
+      "status": "open",
+      "context": [
+        "11-story.md#Awakening rules in play",
+        "04-creature-framework.md#Reacting to the player"
+      ]
+    },
+    {
+      "id": "sys-awakening",
+      "title": "Awakening rules",
+      "layer": "3b",
+      "xp": 150,
+      "kind": "sheet",
+      "prompt": "Stone plus bond, one per battle. Forced forms for the heir's side. Edge cases.",
+      "file": "systems/awakening.md",
+      "template": "system",
+      "status": "open",
+      "context": [
+        "11-story.md#Awakening (Decided",
+        "11-story.md#Awakening rules in play",
+        "11-story.md#Who can awaken"
+      ]
+    },
+    {
+      "id": "sys-catching",
+      "title": "Catching",
+      "layer": "3b",
+      "xp": 150,
+      "kind": "sheet",
+      "prompt": "Catching is a menu action in battle. What you throw, odds, and what 'every creature is an individual' means for duplicates.",
+      "file": "systems/catching.md",
+      "template": "system",
+      "status": "open",
+      "context": [
+        "01-game-bible.md#7. Battles and catching",
+        "01-game-bible.md#5. Creatures",
+        "world/cultures-and-ecology.md#6. How this becomes gameplay"
+      ]
+    },
+    {
+      "id": "sys-growth",
+      "title": "Growth: levels, evolution, moves",
+      "layer": "3b",
+      "xp": 150,
+      "kind": "sheet",
+      "prompt": "How creatures level, evolve and learn moves. Evolution as absorbing more than the body can hold.",
+      "file": "systems/growth.md",
+      "template": "system",
+      "status": "open",
+      "context": [
+        "11-story.md#What the rule explains",
+        "05-starters.md#Design rules"
+      ]
+    },
+    {
+      "id": "sys-trials",
+      "title": "Keeper trials and scaling",
+      "layer": "3b",
+      "xp": 150,
+      "kind": "sheet",
+      "prompt": "How trials work beyond a battle. Scale to stones held, or fixed per island?",
+      "file": "systems/trials.md",
+      "template": "system",
+      "status": "open",
+      "context": [
+        "11-story.md#Rules",
+        "11-story.md#What the player needs",
+        "world/cultures-and-ecology.md#6. How this becomes gameplay"
+      ]
+    },
+    {
+      "id": "sys-items",
+      "title": "Items and economy",
+      "layer": "3b",
+      "xp": 150,
+      "kind": "sheet",
+      "prompt": "Money, shops, healing, held items, the stones themselves.",
+      "file": "systems/items.md",
+      "template": "system",
+      "status": "open",
+      "context": [
+        "01-game-bible.md#7. Battles and catching",
+        "11-story.md#Awakening rules in play"
+      ]
+    },
+    {
+      "id": "sys-wild",
+      "title": "Wild behaviour and encounters",
+      "layer": "3b",
+      "xp": 150,
+      "kind": "sheet",
+      "prompt": "Temperament-driven encounters, aggression, fleeing. Builds on 04-creature-framework.md.",
+      "file": "systems/wild.md",
+      "template": "system",
+      "status": "open",
+      "context": [
+        "04-creature-framework.md#Behaviour",
+        "04-creature-framework.md#Reacting to the player",
+        "01-game-bible.md#5. Creatures",
+        "world/cultures-and-ecology.md#2. How people shape mons"
+      ]
+    },
+    {
+      "id": "sys-camp",
+      "title": "Camp scenes",
+      "layer": "3b",
+      "xp": 150,
+      "kind": "sheet",
+      "prompt": "Rest, talk to your party, watch your mons interact. Where bond grows.",
+      "file": "systems/camp.md",
+      "template": "system",
+      "status": "open",
+      "context": [
+        "11-story.md#11. Ideas taken",
+        "11-story.md#Tone rules"
+      ]
+    },
+    {
+      "id": "sys-daynight",
+      "title": "Day, night and weather as gameplay",
+      "layer": "3b",
+      "xp": 150,
+      "kind": "sheet",
+      "prompt": "What changes: species, behaviour, type strength, story.",
+      "file": "systems/daynight.md",
+      "template": "system",
+      "status": "open",
+      "context": [
+        "03-world-and-maps.md#Sky, ocean, day and night",
+        "04-creature-framework.md#Habitat, time, weather"
+      ]
+    },
+    {
+      "id": "sys-living-world",
+      "title": "Living world",
+      "layer": "3b",
+      "xp": 150,
+      "kind": "sheet",
+      "prompt": "People with daily routines, ambient conversations, strangers with side stories, events that happen without you. RDR2 is the reference.",
+      "file": "systems/living-world.md",
+      "template": "system",
+      "status": "open",
+      "context": [
+        "11-story.md#11. Ideas taken",
+        "04-creature-framework.md#Behaviour"
+      ]
+    },
+    {
+      "id": "sys-boat",
+      "title": "Boat and sailing",
+      "layer": "3b",
+      "xp": 150,
+      "kind": "sheet",
+      "prompt": "Sailing the overworld, upgrades as gates, scouting later islands.",
+      "file": "systems/boat.md",
+      "template": "system",
+      "status": "open",
+      "context": [
+        "11-story.md#10. Structure"
+      ]
+    },
+    {
+      "id": "roster",
+      "title": "Species roster: the first 100",
+      "layer": "4",
+      "xp": 300,
+      "kind": "sheet",
+      "prompt": "One line per species: name, type, island, role. Use the species template for full sheets.",
+      "file": "species/roster.md",
+      "template": "system",
+      "status": "open",
+      "context": [
+        "01-game-bible.md#5. Creatures",
+        "05-starters.md#Design rules",
+        "04-creature-framework.md#The species sheet"
+      ]
+    },
+    {
+      "id": "awakening-designs",
+      "title": "Design the 12 awakening forms",
+      "layer": "4",
+      "xp": 300,
+      "kind": "sheet",
+      "prompt": "The 12 forms. Each adds features and commands respect.",
+      "file": "species/awakening-forms.md",
+      "template": "system",
+      "status": "open",
+      "context": [
+        "11-story.md#9. The twelve awakening species",
+        "05-starters.md#Design rules"
+      ]
+    },
+    {
+      "id": "names",
+      "title": "Name everything",
+      "layer": "4",
+      "xp": 100,
+      "kind": "decision",
+      "prompt": "The game, the region, the hero, the warden, the rival, the heir, the ancestor, the town.",
+      "status": "open",
+      "context": [
+        "11-story.md#13. Open questions"
+      ],
+      "widget": {
+        "type": "fields",
+        "fields": [
+          {
+            "id": "game",
+            "label": "The game",
+            "type": "text",
+            "lines": 1
+          },
+          {
+            "id": "region",
+            "label": "The region",
+            "type": "text",
+            "lines": 1
+          },
+          {
+            "id": "town",
+            "label": "The home town",
+            "type": "text",
+            "lines": 1
+          },
+          {
+            "id": "hero",
+            "label": "The hero",
+            "type": "text",
+            "lines": 1
+          },
+          {
+            "id": "rival",
+            "label": "The rival",
+            "type": "text",
+            "lines": 1
+          },
+          {
+            "id": "warden",
+            "label": "The warden",
+            "type": "text",
+            "lines": 1
+          },
+          {
+            "id": "heir",
+            "label": "The heir",
+            "type": "text",
+            "lines": 1
+          },
+          {
+            "id": "ancestor",
+            "label": "The ancestor",
+            "type": "text",
+            "lines": 1,
+            "optional": true
+          },
+          {
+            "id": "villain",
+            "label": "The true antagonist",
+            "type": "text",
+            "lines": 1,
+            "optional": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "terms",
+      "title": "Name the world's terms",
+      "layer": "4",
+      "xp": 100,
+      "kind": "decision",
+      "prompt": "Placeholders: the Current, awakening, the Long Storm, the wound, keepers.",
+      "status": "open",
+      "context": [
+        "11-story.md#13. Open questions",
+        "11-story.md#The Current",
+        "11-story.md#The Long Storm"
+      ],
+      "widget": {
+        "type": "fields",
+        "fields": [
+          {
+            "id": "current",
+            "label": "The Current",
+            "type": "text",
+            "lines": 1,
+            "placeholder": "Keep, or your name for the energy"
+          },
+          {
+            "id": "awakening",
+            "label": "Awakening",
+            "type": "text",
+            "lines": 1,
+            "placeholder": "Your name for the mega forms"
+          },
+          {
+            "id": "storm",
+            "label": "The Long Storm",
+            "type": "text",
+            "lines": 1,
+            "placeholder": "The once-a-century surge"
+          },
+          {
+            "id": "wound",
+            "label": "The wound",
+            "type": "text",
+            "lines": 1,
+            "placeholder": "The tear on the ruined island"
+          },
+          {
+            "id": "keepers",
+            "label": "Keepers",
+            "type": "text",
+            "lines": 1,
+            "placeholder": "The people who guard the stones"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stolen-fate",
+      "title": "Decide the stolen starter's fate",
+      "layer": "4",
+      "xp": 50,
+      "kind": "decision",
+      "prompt": "Joins you, goes home, or stays with the heir until the end.",
+      "status": "open",
+      "context": [
+        "11-story.md#8. The starters",
+        "11-story.md#14. The switch-up"
+      ],
+      "widget": {
+        "type": "fields",
+        "fields": [
+          {
+            "id": "fate",
+            "label": "What happens to the stolen starter?",
+            "type": "choice",
+            "allowCustom": true,
+            "options": [
+              {
+                "label": "Joins you"
+              },
+              {
+                "label": "Goes home"
+              },
+              {
+                "label": "Stays with the heir",
+                "hint": "And becomes his properly bonded partner after the switch"
+              }
+            ]
+          },
+          {
+            "id": "scene",
+            "label": "The scene where it's settled",
+            "type": "text",
+            "lines": 2,
+            "optional": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "heir-ending",
+      "title": "Decide what the switch costs the heir",
+      "layer": "4",
+      "xp": 50,
+      "kind": "decision",
+      "prompt": "He's redeemed and joins you. What does it cost him, and how does his story end after the finale?",
+      "status": "open",
+      "context": [
+        "11-story.md#14. The switch-up",
+        "11-story.md#2. Theme"
+      ],
+      "widget": {
+        "type": "fields",
+        "fields": [
+          {
+            "id": "end",
+            "label": "How does his story end after the finale?",
+            "type": "choice",
+            "allowCustom": true,
+            "options": [
+              {
+                "label": "Becomes a keeper"
+              },
+              {
+                "label": "Leaves the islands"
+              },
+              {
+                "label": "Stays to rebuild the ruined island"
+              },
+              {
+                "label": "Doesn't survive it"
+              }
+            ]
+          },
+          {
+            "id": "line",
+            "label": "His last line or image",
+            "type": "text",
+            "lines": 2,
+            "optional": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "surge-clock",
+      "title": "Show the surge timing or not",
+      "layer": "4",
+      "xp": 50,
+      "kind": "decision",
+      "prompt": "A visible countdown or a story clock?",
+      "status": "open",
+      "context": [
+        "11-story.md#The Long Storm"
+      ],
+      "widget": {
+        "type": "fields",
+        "fields": [
+          {
+            "id": "clock",
+            "label": "Does the player see the surge coming?",
+            "type": "choice",
+            "allowCustom": false,
+            "options": [
+              {
+                "label": "Story clock",
+                "hint": "It arrives when the plot says"
+              },
+              {
+                "label": "Visible signs",
+                "hint": "Weather and the wound get worse as you earn stones"
+              },
+              {
+                "label": "A real countdown",
+                "hint": "Days pass and it matters"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "raid-layer",
+      "title": "The raid layer: later or never",
+      "layer": "4",
+      "xp": 50,
+      "kind": "decision",
+      "prompt": "Islands you put off get raided first and their chapter changes. Doubles writing.",
+      "status": "open",
+      "context": [
+        "11-story.md#Later"
+      ],
+      "widget": {
+        "type": "fields",
+        "fields": [
+          {
+            "id": "raid",
+            "label": "Islands you put off get raided first?",
+            "type": "choice",
+            "allowCustom": false,
+            "options": [
+              {
+                "label": "Later",
+                "hint": "After the base game works"
+              },
+              {
+                "label": "Never"
+              },
+              {
+                "label": "Now",
+                "hint": "Build it into the island sheets"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "act1-script",
+      "title": "Write the Act 1 script",
+      "layer": "4",
+      "xp": 200,
+      "kind": "sheet",
+      "prompt": "Wake up, the gate, the warden's station, the theft, morning. Matches 11-story.md.",
+      "file": "world/act1-script.md",
+      "template": "system",
+      "status": "open",
+      "context": [
+        "06-hero-and-cutscenes.md#The intro",
+        "11-story.md#Act 1"
+      ]
+    },
+    {
+      "id": "postgame",
+      "title": "Plan the post-game",
+      "layer": "4",
+      "xp": 100,
+      "kind": "sheet",
+      "prompt": "Lesser stones and their forms, side areas, the world beyond the chain.",
+      "file": "world/postgame.md",
+      "template": "system",
+      "status": "open",
+      "context": [
+        "11-story.md#Room to grow",
+        "11-story.md#Post-game"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "confirm-defaults": {
+    "overall": "Overall awakening rules are good\nWe need a little more cast, I want this world to feel ALIVE, let's add RDr2 to our concepts for reference.\neverything else is good\n",
+    "notes": [
+      {
+        "key": "11-story.md?match=Default::Tone rules (Default)::The characters joke; the world doesn't. Mum, the rival, townsfolk and the creatures' personalities carry the humour. Bleached reefs and empt",
+        "ref": "11-story.md?match=Default",
+        "section": "Tone rules (Default)",
+        "item": "The characters joke; the world doesn't. Mum, the rival, townsfolk and the creatures' personalities carry the humour. Bleached reefs and empty villages are shown straight.",
+        "verdict": "note",
+        "text": "We don't need to try too hard with humor. Maybe we can try some jokes and see how it feels. ",
+        "updatedAt": "2026-11-16T02:43:04.624Z"
+      },
+      {
+        "key": "11-story.md?match=Default::Tone rules (Default)::Show the serious side, don't announce it. A keeper who guards a stone and can't remember why. A house on the ruined island with the table st",
+        "ref": "11-story.md?match=Default",
+        "section": "Tone rules (Default)",
+        "item": "Show the serious side, don't announce it. A keeper who guards a stone and can't remember why. A house on the ruined island with the table still set.",
+        "verdict": "note",
+        "text": "Very important we show rather than tell. Story-telling 101",
+        "updatedAt": "2026-11-16T02:43:35.997Z"
+      },
+      {
+        "key": "11-story.md?match=Default::Tone rules (Default)::The seriousness lands through creatures. The stolen starter's forced form is the moment the game stops smiling.",
+        "ref": "11-story.md?match=Default",
+        "section": "Tone rules (Default)",
+        "item": "The seriousness lands through creatures. The stolen starter's forced form is the moment the game stops smiling.",
+        "verdict": "change",
+        "text": "Shouln't be stop smiling forever of course. its a moment to take it in but darker tones should be understood from the jump but not pushed you know. Like the real world. Thats just how things are. ",
+        "updatedAt": "2026-11-16T02:44:29.680Z"
+      },
+      {
+        "key": "11-story.md?match=Default::Tone rules (Default)::Nobody is evil for fun. The heir is grieving and certain. His crew believe him.",
+        "ref": "11-story.md?match=Default",
+        "section": "Tone rules (Default)",
+        "item": "Nobody is evil for fun. The heir is grieving and certain. His crew believe him.",
+        "verdict": "change",
+        "text": "Sometimes there are just assholes.",
+        "updatedAt": "2026-11-16T02:46:07.672Z"
+      },
+      {
+        "key": "11-story.md?match=Default::7. The rival (Default)::The guilt makes them want a shortcut. Mid-game the heir's offer tempts them, and they side with him for a while.",
+        "ref": "11-story.md?match=Default",
+        "section": "7. The rival (Default)",
+        "item": "The guilt makes them want a shortcut. Mid-game the heir's offer tempts them, and they side with him for a while.",
+        "verdict": "change",
+        "text": "IDK",
+        "updatedAt": "2026-11-16T02:48:13.932Z"
+      }
+    ]
+  },
+  "types": {
+    "overall": "",
+    "notes": [],
+    "data": {
+      "types": [
+        "Plant",
+        "Ground",
+        "Rock",
+        "Air",
+        "Ice",
+        "Poison",
+        "Metal",
+        "Water",
+        "Fire",
+        "Lightning",
+        "Light",
+        "Dark",
+        "Flying"
+      ],
+      "sources": [],
+      "secondary": [
+        "Dark",
+        "Flying"
+      ],
+      "origins": {
+        "Dark": "Deep water, caves, night",
+        "Flying": "Cliffs, peaks, open sky"
+      }
+    }
+  }
+}
