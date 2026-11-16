@@ -60,7 +60,7 @@ Quests aren't a text box on top of a doc. Each one opens the tool that fits it, 
 |---|---|---|
 | **Type picker** | Main types (elements) and secondary types (where a mon lives), then the 12 island elements | `world/types.md` |
 | **Chart** | Click cells to set matchups; built from your type list | `world/type-chart.md` |
-| **Island board** | 12 slots laid out like the route: element, biome, stone and mons relationship | `world/islands-skeleton.md` |
+| **Island board** | 13 slots laid out like the route: home (no stone) plus 12 source islands, each with element, biome, stone and mons relationship | `world/islands-skeleton.md` |
 | **Choices** | Decisions with real options: pick cards, assign rows, add your own | The decision log |
 | **Review** | Read a doc and note items in place | The decision log |
 | **Sheet** | Long-form writing from a template | The sheet itself |

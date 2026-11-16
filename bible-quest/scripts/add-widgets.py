@@ -94,7 +94,7 @@ for q in d["quests"]:
 PROMPTS = {
  "types": "Build the type list. Pick from the pool or invent your own, then mark the 12 that get an island.",
  "type-chart": "Set who beats whom. Rows attack, columns defend. The chart builds itself from your type list.",
- "island-skeleton": "Fill the board: 12 islands, each with an element, a biome, and how it treats its stone and its mons.",
+ "island-skeleton": "Fill the board: home plus 12 source islands. Home has no stone, so it takes no element. Tier 1 is Water, Plant and Fire, the starters' homes. Every other island gets an element, a biome, and how it treats its stone and its mons.",
  "true-antagonist": "Who is really behind the storm, and why?",
 }
 for q in d["quests"]:

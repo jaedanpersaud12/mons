@@ -31,7 +31,7 @@ export type Layer = {
 
 export const LAYERS: Layer[] = [
   { id: "1", name: "Rules", blurb: "Theme, tone, the Current", needs: [] },
-  { id: "2", name: "Skeleton", blurb: "Types, the chart, 12 islands", needs: ["1"] },
+  { id: "2", name: "Skeleton", blurb: "Types, the chart, 13 islands", needs: ["1"] },
   { id: "3a", name: "Islands and cast", blurb: "Species, culture, keepers, characters", needs: ["2"] },
   { id: "3b", name: "Systems", blurb: "Battle, bond, catching, items", needs: ["2"] },
   { id: "4", name: "Content", blurb: "Roster, names, scripts, endings", needs: ["3a", "3b"] },
@@ -121,7 +121,7 @@ export function achievements(quests: Quest[]): Achievement[] {
     { id: "rules", name: "Rules locked", how: "Finish the Rules layer", earned: layerStats(quests, "1").complete },
     { id: "map", name: "Map drawn", how: "Finish the Skeleton layer", earned: layerStats(quests, "2").complete },
     { id: "hopper", name: "Island hopper", how: "Finish 4 island sheets", earned: doneCount(islandSheets) >= 4 },
-    { id: "chain", name: "Chain walker", how: "Finish all 12 island sheets", earned: all(islandSheets) },
+    { id: "chain", name: "Chain walker", how: "Finish all 13 island sheets", earned: all(islandSheets) },
     { id: "cast", name: "Full cast", how: "Finish every character sheet", earned: all((q) => q.id.startsWith("char-")) },
     { id: "systems", name: "Systems online", how: "Finish the Systems layer", earned: layerStats(quests, "3b").complete },
     { id: "roll", name: "On a roll", how: "Lock a decision 3 days in a row", earned: streak(quests) >= 3 },

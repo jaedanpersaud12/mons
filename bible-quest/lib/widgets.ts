@@ -60,9 +60,10 @@ export const TYPE_PRESETS = [...MAIN_PRESETS, ...SECONDARY_PRESETS.map((x) => x.
 export const STONE_RELATIONS = ["Faith", "Economy", "Law", "Folk", "Secret", "Contested"];
 export const MONS_RELATIONS = ["Partners", "Revered", "Resource", "Feared", "Rivals"];
 
-export type IslandSlot = { id: string; label: string; group: string; fixed?: boolean };
+/** `noStone`: no source and no stone, so the slot takes no element and no stone relationship. */
+export type IslandSlot = { id: string; label: string; group: string; fixed?: boolean; noStone?: boolean };
 export const ISLAND_SLOTS: IslandSlot[] = [
-  { id: "home", label: "Home", group: "Home", fixed: true },
+  { id: "home", label: "Home", group: "Home", fixed: true, noStone: true },
   { id: "tier1-a", label: "Island A", group: "Tier 1" },
   { id: "tier1-b", label: "Island B", group: "Tier 1" },
   { id: "tier1-c", label: "Island C", group: "Tier 1" },
@@ -73,6 +74,7 @@ export const ISLAND_SLOTS: IslandSlot[] = [
   { id: "reveal", label: "Reveal", group: "Reveal", fixed: true },
   { id: "tier3-a", label: "Island A", group: "Tier 3" },
   { id: "tier3-b", label: "Island B", group: "Tier 3" },
+  { id: "tier3-c", label: "Island C", group: "Tier 3" },
   { id: "ruined", label: "The ruined island", group: "Ruined", fixed: true },
 ];
 
@@ -108,6 +110,11 @@ export const orderedTypes = (t: TypesData) => [...mainsOf(t), ...secondariesOf(t
 const asChart = (d: unknown): ChartData => ({ cells: ((d ?? {}) as Partial<ChartData>).cells ?? {} });
 const asIslands = (d: unknown): IslandsData => ({ islands: ((d ?? {}) as Partial<IslandsData>).islands ?? {} });
 export { asTypes, asChart, asIslands };
+/** The starters' elements. Their home islands are the three tier 1 islands. */
+export const STARTER_ELEMENTS = ["Water", "Plant", "Fire"];
+/** A slot's relationships are filled in: mons for every island, stone only where there is one. */
+export const islandRelDone = (s: IslandSlot, i: Island) => !!i.mons && (s.noStone || !!i.stone);
+export const islandDone = (s: IslandSlot, i: Island) => !!i.biome?.trim() && islandRelDone(s, i) && (s.noStone || !!i.element);
 
 function fieldDone(f: Field, v: FieldsData[string] | undefined) {
   if (f.type === "text" || f.type === "choice") return typeof v === "string" && v.trim().length > 0;
@@ -185,16 +192,22 @@ export function objectivesFor(quest: Quest, data: unknown, ctx: Ctx): Objective[
   }
   // islands
   const { islands } = asIslands(data);
-  const list = ISLAND_SLOTS.map((s) => islands[s.id] ?? {});
-  const els = list.map((i) => i.element).filter(Boolean) as string[];
-  const n = (pred: (i: Island) => boolean) => list.filter(pred).length;
+  const all = ISLAND_SLOTS.map((s) => ({ s, i: islands[s.id] ?? {} }));
+  const sources = all.filter((x) => !x.s.noStone);
+  const total = all.length;
+  const els = sources.map((x) => x.i.element).filter(Boolean) as string[];
+  const biomes = all.filter((x) => !!x.i.biome?.trim()).length;
+  const rels = all.filter((x) => islandRelDone(x.s, x.i)).length;
+  const insp = all.filter((x) => !!x.i.inspiration?.trim()).length;
+  const tier1 = sources.filter((x) => x.s.group === "Tier 1").map((x) => x.i.element);
   return [
-    { id: "el", label: "Every island has an element", done: els.length === 12, detail: `${els.length}/12` },
+    { id: "el", label: "Every source island has an element", done: els.length === sources.length, detail: `${els.length}/${sources.length}` },
     { id: "uniq", label: "No element used twice", done: els.length > 0 && new Set(els).size === els.length },
-    { id: "biome", label: "Every island has a biome", done: n((i) => !!i.biome?.trim()) === 12, detail: `${n((i) => !!i.biome?.trim())}/12` },
-    { id: "rel", label: "Every island has a stone and mons relationship", done: n((i) => !!i.stone && !!i.mons) === 12, detail: `${n((i) => !!i.stone && !!i.mons)}/12` },
-    { id: "variety", label: "At least 4 different stone relationships", done: new Set(list.map((i) => i.stone).filter(Boolean)).size >= 4, bonus: true },
-    { id: "insp", label: "Every island has an inspiration", done: n((i) => !!i.inspiration?.trim()) === 12, bonus: true },
+    { id: "tier1", label: "Tier 1 is Water, Plant and Fire", done: STARTER_ELEMENTS.every((e) => tier1.includes(e)) },
+    { id: "biome", label: "Every island has a biome", done: biomes === total, detail: `${biomes}/${total}` },
+    { id: "rel", label: "Every island has its stone and mons relationship", done: rels === total, detail: `${rels}/${total}` },
+    { id: "variety", label: "At least 4 different stone relationships", done: new Set(sources.map((x) => x.i.stone).filter(Boolean)).size >= 4, bonus: true },
+    { id: "insp", label: "Every island has an inspiration", done: insp === total, bonus: true },
   ];
 }
 
@@ -236,10 +249,12 @@ export function widgetAnswer(quest: Quest, data: unknown, ctx: Ctx): string {
   }
   const { islands } = asIslands(data);
   return (
-    `12 islands sketched. Written to \`${quest.output}\`.\n` +
+    `${ISLAND_SLOTS.length} islands sketched. Written to \`${quest.output}\`.\n` +
     ISLAND_SLOTS.map((s) => {
       const i = islands[s.id] ?? {};
-      return `- ${s.group === s.label || s.fixed ? s.label : `${s.group}, ${s.label}`}: ${i.element ?? "?"}, ${i.biome ?? "?"} (stone: ${i.stone ?? "?"}; mons: ${i.mons ?? "?"})`;
+      const name = s.group === s.label || s.fixed ? s.label : `${s.group}, ${s.label}`;
+      if (s.noStone) return `- ${name}: no stone, ${i.biome ?? "?"} (mons: ${i.mons ?? "?"})`;
+      return `- ${name}: ${i.element ?? "?"}, ${i.biome ?? "?"} (stone: ${i.stone ?? "?"}; mons: ${i.mons ?? "?"})`;
     }).join("\n")
   );
 }
@@ -295,8 +310,10 @@ export function widgetOutput(quest: Quest, data: unknown, ctx: Ctx): string | nu
       ISLAND_SLOTS.map((s) => {
         const i = islands[s.id] ?? {};
         const slot = s.fixed ? s.label : `${s.group}, ${s.label}`;
+        if (s.noStone) return `| ${slot} | No stone | ${i.biome ?? ""} | ${i.inspiration ?? ""} | None | ${i.mons ?? ""} |`;
         return `| ${slot} | ${i.element ?? ""} | ${i.biome ?? ""} | ${i.inspiration ?? ""} | ${i.stone ?? ""} | ${i.mons ?? ""} |`;
       }).join("\n") +
+      "\n\nHome has no source and no stone. Tier 1 holds the starters' home islands: Water, Plant and Fire, in any order." +
       "\n\nStone and mons relationships are defined in `world/cultures-and-ecology.md`.\n"
     );
   }

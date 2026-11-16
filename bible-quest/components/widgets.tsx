@@ -8,8 +8,10 @@ import {
   MAIN_PRESETS,
   MONS_RELATIONS,
   SECONDARY_PRESETS,
+  STARTER_ELEMENTS,
   STONE_RELATIONS,
   asChart,
+  islandDone,
   mainsOf,
   orderedTypes,
   asIslands,
@@ -524,14 +526,14 @@ export function ChartWidget({ value, onChange, types, disabled }: { value: unkno
   );
 }
 
-/* ---------- Islands: the 12-slot board ---------- */
+/* ---------- Islands: the board, home plus 12 source islands ---------- */
 
 export function IslandsWidget({ value, onChange, types, disabled }: { value: unknown; onChange: (v: { islands: Record<string, Island> }) => void; types: TypesData; disabled?: boolean }) {
   const { islands } = asIslands(value);
   const mains = mainsOf(types);
   const live = types.sources.filter((s) => mains.includes(s));
   const elements = live.length ? live : mains;
-  const used = Object.values(islands).map((i) => i.element).filter(Boolean);
+  const used = ISLAND_SLOTS.filter((s) => !s.noStone).map((s) => islands[s.id]?.element).filter(Boolean);
   const set = (id: string, patch: Island) => onChange({ islands: { ...islands, [id]: { ...islands[id], ...patch } } });
 
   const groups: { name: string; slots: typeof ISLAND_SLOTS }[] = [];
@@ -555,11 +557,24 @@ export function IslandsWidget({ value, onChange, types, disabled }: { value: unk
             <p className={`${label} mb-1.5 ${open ? "text-[#93B0FF]" : ""}`}>
               {g.name}
               {open ? " · any order" : " · fixed story island"}
+              {g.name === "Tier 1" ? " · the starters' homes: Water, Plant, Fire" : ""}
             </p>
             <div className={`grid gap-2 ${open ? "sm:grid-cols-3" : "sm:grid-cols-3"}`}>
               {g.slots.map((s) => {
                 const i = islands[s.id] ?? {};
-                const complete = !!(i.element && i.biome?.trim() && i.stone && i.mons);
+                const complete = islandDone(s, i);
+                const starterOnly = s.group === "Tier 1";
+                const picks = starterOnly ? elements.filter((t) => STARTER_ELEMENTS.includes(t)) : elements;
+                const monsSelect = (
+                  <Select
+                    label="Mons relationship"
+                    placeholder="Mons…"
+                    value={i.mons}
+                    disabled={disabled}
+                    onChange={(v) => set(s.id, { mons: v })}
+                    items={MONS_RELATIONS.map((r) => ({ value: r, label: r }))}
+                  />
+                );
                 return (
                   <div
                     key={s.id}
@@ -574,34 +589,38 @@ export function IslandsWidget({ value, onChange, types, disabled }: { value: unk
                       {complete ? <Tick /> : null}
                     </div>
                     <div className="space-y-1.5">
-                      <Select
-                        label="Element"
-                        placeholder="Element…"
-                        value={i.element}
-                        disabled={disabled}
-                        onChange={(v) => set(s.id, { element: v })}
-                        items={elements.map((t) => ({ value: t, label: t, hint: used.includes(t) && i.element !== t ? "used" : undefined }))}
-                      />
+                      {s.noStone ? (
+                        <div className="flex h-9 items-center justify-between rounded-[8px] border border-dashed border-white/[0.12] px-2.5 text-[13px] text-stone-400">
+                          <span>No stone</span>
+                          <span className="text-[11.5px] text-stone-500">archive and rescue station</span>
+                        </div>
+                      ) : (
+                        <Select
+                          label="Element"
+                          placeholder={starterOnly ? "Water, Plant or Fire…" : "Element…"}
+                          value={i.element}
+                          disabled={disabled}
+                          onChange={(v) => set(s.id, { element: v })}
+                          items={picks.map((t) => ({ value: t, label: t, hint: used.includes(t) && i.element !== t ? "used" : undefined }))}
+                        />
+                      )}
                       <input className={`${input} h-8 text-[12.5px]`} value={i.biome ?? ""} disabled={disabled} onChange={(e) => set(s.id, { biome: e.target.value })} placeholder="Biome, e.g. reef shallows" aria-label="Biome" />
                       <input className={`${input} h-8 text-[12.5px]`} value={i.inspiration ?? ""} disabled={disabled} onChange={(e) => set(s.id, { inspiration: e.target.value })} placeholder="Inspiration (bonus)" aria-label="Inspiration" />
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <Select
-                          label="Stone relationship"
-                          placeholder="Stone…"
-                          value={i.stone}
-                          disabled={disabled}
-                          onChange={(v) => set(s.id, { stone: v })}
-                          items={STONE_RELATIONS.map((r) => ({ value: r, label: r }))}
-                        />
-                        <Select
-                          label="Mons relationship"
-                          placeholder="Mons…"
-                          value={i.mons}
-                          disabled={disabled}
-                          onChange={(v) => set(s.id, { mons: v })}
-                          items={MONS_RELATIONS.map((r) => ({ value: r, label: r }))}
-                        />
-                      </div>
+                      {s.noStone ? (
+                        monsSelect
+                      ) : (
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <Select
+                            label="Stone relationship"
+                            placeholder="Stone…"
+                            value={i.stone}
+                            disabled={disabled}
+                            onChange={(v) => set(s.id, { stone: v })}
+                            items={STONE_RELATIONS.map((r) => ({ value: r, label: r }))}
+                          />
+                          {monsSelect}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
