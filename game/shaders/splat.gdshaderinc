@@ -37,14 +37,18 @@ vec3 water_tint(vec3 c, vec3 p) {
 		// the old look: a flat blue that hides everything
 		return mix(vec3(0.525, 0.839, 0.824), vec3(0.184, 0.525, 0.678), clamp(wd / 0.38, 0.0, 1.0)) * (0.84 + 0.1 * sin(t * 2.1 + w.x * 3.1 + w.y * 2.3));
 	}
-	// caustics: three warped sine sheets, bright where they cross zero
+	// Under water a thing keeps its own colour but the water's colour lies over it like a veil: thin at the surface, thicker with depth.
+	// Mixing toward one colour (and not absorbing each channel) is what keeps a pink coral pink and a dark rock dark, so shapes stay readable.
+	c.r *= exp(-0.5 * wd);                                   // red still fades first
+	c *= 1.0 - 0.45 * smoothstep(0.9, 3.0, wd);              // and everything dims in deep water
+	vec3 body = mix(vec3(0.20, 0.74, 0.80), vec3(0.02, 0.13, 0.40), smoothstep(0.35, 2.6, wd));
+	float veil = 0.16 + 0.5 * (1.0 - exp(-wd * 0.8));
+	vec3 col = mix(c, body, veil);
+	// The surface: a net of light lines that sits at the same place whatever is under it, so it reads as lying on top.
 	vec2 q = w * 2.6;
 	float ca = sin(q.x * 1.3 + 1.4 * sin(q.y * 1.1 + t * 0.7) + t * 0.5) + sin(q.y * 1.5 + 1.4 * sin(q.x * 0.9 - t * 0.6) - t * 0.35) + sin((q.x + q.y) * 0.9 + 1.2 * sin((q.x - q.y) * 0.8 + t * 0.5));
-	ca = pow(1.0 - abs(ca) / 3.0, 10.0) * water_fx.y;
-	c *= 0.96 + 0.5 * ca * exp(-wd * 1.1) * smoothstep(0.0, 0.08, wd);
-	// absorption (red goes first), then the light the water itself scatters back
-	float fog = 1.0 - exp(-wd * 0.75);
-	vec3 col = c * exp(-vec3(1.9, 0.62, 0.30) * wd) * (1.0 - 0.7 * smoothstep(1.2, 3.0, wd)) + mix(vec3(0.07, 0.60, 0.80), vec3(0.02, 0.14, 0.42), smoothstep(0.3, 2.2, wd)) * fog;
+	ca = pow(1.0 - abs(ca) / 3.0, 9.0) * water_fx.y;
+	col += vec3(0.15, 0.19, 0.17) * ca * (0.3 + 0.7 * exp(-wd * 0.5)) * smoothstep(0.0, 0.08, wd);
 	// slow light bands across the surface
 	col *= 1.0 + 0.05 * sin(w.x * 1.1 + w.y * 0.7 + t * 0.8) * sin(w.x * 0.5 - w.y * 1.3 - t * 0.6);
 	// rings around the player while wading
@@ -112,6 +116,14 @@ void vertex() {
 	if (sw > 0.0) {
 		float w = sin(wind_t * 1.5 + p.x * 0.9 + p.z * 0.7 + ph * 6.283) * 0.5 + sin(wind_t * 0.6 + p.x * 0.25) * 0.9;
 		p.x += sw * w * 0.09; c.rgb *= 1.0 + sw * w * 0.07; p.z += sw * cos(wind_t * 1.2 + p.z * 0.8 + ph * 5.0) * 0.05; p.y += sw * sin(wind_t * 1.9 + ph * 9.0) * 0.015;
+	}
+	// refraction: things under the water shimmer a little, more the deeper they are
+	if (g != 5.0 && water_fx.x > 0.5) {
+		float uw = water_y - p.y;
+		if (uw > 0.03 && pond_r(p.xz) < pond_zone) {
+			float k = min(uw, 0.7) * 0.03;
+			p.x += k * sin(water_t * 1.7 + p.z * 3.1 + p.x * 1.3); p.z += k * cos(water_t * 1.4 + p.x * 2.7 - p.z * 1.1);
+		}
 	}
 	if (c.a < 0.5) {
 		for (int i = 0; i < 4; i++) {
