@@ -70,22 +70,36 @@ The water is see-through, and it is not drawn at all. The lake has a real bed wi
 
 | Part | What it does |
 |---|---|
-| Depth tint | The water's colour lies over things like a veil: thin at the surface, thicker with depth. Things keep their own colour underneath, so a pink coral stays pink and a rock stays dark |
+| Lakebed bands | The bed is drawn in flat bands of the lake's own colours, one per depth (pale aqua, aqua, teal, blue, navy), so it stays clean after the pixel pass. Shadowed and weedy spots take the next colour down |
+| Depth tint | On everything else, the water's colour lies over things like a veil: thin at the surface, thicker with depth. Things keep their own colour underneath, so a pink coral stays pink and a rock stays dark |
 | Lakebed | Sand that follows the terrain, with weedy patches, and a deep hole in the middle |
 | On the bed | Rocks (a few break the surface), branching corals, brain corals, tube sponges, starfish, sea grass that sways, tall kelp on the walls of the hole. Each darkens the sand beside it, so it reads as sitting on the bottom |
-| Surface net | Moving light lines that sit in the same place whatever is under them, which is what makes the surface read as lying on top |
+| Light lines | Thin moving lines of light that sit in the same place whatever is under them, which is what makes the surface read as lying on top. Shallows only |
 | Shimmer | Things under water wobble slightly, more the deeper they are |
 | Foam and glints | A thin layer of surface splats that the shader only shows as foam at the waterline or as pinprick glints |
 | Waterline | Moves in and out, leaving wet sand behind it |
-| Wading | Rings spread from the player while standing in water |
 
 Key 3 switches to the old flat, opaque blue for comparison.
+
+### The player in the water
+
+| What | How it behaves |
+|---|---|
+| Wading | The deeper you stand, the slower you walk and the slower you start and stop. At chest depth you move at about half speed |
+| Floating | Past shoulder depth your feet leave the bottom and you float, bobbing slightly, a little slower again. You can cross the deep hole |
+| Jumping | A jump out of water is weaker the deeper you are |
+| Rings | Rings spread from you as you move, closer together the faster you go. Standing still gives a slow ring now and then |
+| Splashes | Droplets fly up when you land in water or run in from the shore |
+| Foam collar | A broken ring of foam sits where your body meets the surface |
+| Under the surface | The part of you below the waterline takes the water's colour |
+
+Nothing in the water is solid yet: you pass through rocks and corals. There is no swimming animation; floating reuses the walk. The calf still stays out of the water.
 
 The water code is `water_tint()` and the `g == 5.0` block in `shaders/splat.gdshaderinc`. `tools/bake_water.py` is the script that rebuilt the lake (bed, props, surface layer, palette) from the original export; it has already been run on the data in this folder.
 
 **Palette.** The lake has eight colours of its own (deep blue to pale aqua, a slate for rocks, one lilac and one pink for anything living), and the tint is tuned so that what is under water lands on them. That is why the palette is 32 colours and not 28, and why every coral is pink or lilac: a yellow coral under water snaps to the land's lime green.
 
-Not there yet: reflections, a sky to reflect, waves that move the surface, splashes, fish, and anything for the open sea. The tint uses straight-down depth, not the true distance through the water, so steep viewing angles are slightly too clear.
+Not there yet: reflections, a sky to reflect, waves that move the surface, fish, foam around rocks that break the surface, and anything for the open sea. The tint uses straight-down depth, not the true distance through the water, so steep viewing angles are slightly too clear.
 
 ## Data (`data/`)
 

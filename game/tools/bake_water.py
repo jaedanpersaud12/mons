@@ -51,7 +51,7 @@ BED_WEED, BED_DARK = hexc(0x6FA06A), hexc(0xC9B98E)
 ROCKS = [hexc(0x6E6A7C), hexc(0x5C5868), hexc(0x7A7684)]            # the same purple-grey as the rocks on land
 # Under water the palette only has room for two coral colours, a pink and a lilac, so everything living is one of those two families.
 BRANCH = [hexc(0xFF5E8A), hexc(0xB45CF0), hexc(0xFF6F9E), hexc(0x9A6CF2)]
-BRAIN = [(hexc(0xC8507E), hexc(0xFFB3CC)), (hexc(0x7E56C8), hexc(0xD2B8F8))]
+BRAIN = [(hexc(0x8A5CD8), hexc(0xFF7FA6)), (hexc(0xE0528A), hexc(0xB48CF0))]   # ridges and grooves: one from each coral family
 TUBES = [hexc(0x9B4DE0), hexc(0xF0508A), hexc(0x7A5CE8)]
 STARS = [hexc(0xFF4F7A), hexc(0xF23A6A)]
 # The lake gets eight palette colours of its own. The tint is tuned so that what is under water lands on these.
@@ -120,11 +120,7 @@ def mixc(a, b, t):
 def bed_col(x, z, d):
     """Lakebed: pale sand, a little darker with depth, with patches of low weed."""
     c = mixc(SAND1[None], SAND2[None], n2(x * 2, z * 2))
-    c = mixc(c, BED_DARK[None], sm(0.25, 1.4, d) * 0.4)
-    w = n2(x * 0.9 + 40, z * 0.9 + 17)
-    c = np.where(((w < 0.3) & (d > 0.25))[:, None], mixc(c, BED_WEED[None], sm(0.3, 0.2, w) * 0.45), c)
-    ripple = 0.5 + 0.5 * np.sin(x * 9 + 2.2 * np.sin(z * 3.1)) * np.sin(z * 7 + 1.7 * np.sin(x * 2.3))
-    return c * (0.93 + 0.07 * ripple)[:, None]
+    return c
 
 
 def water_tint(c, wd):
@@ -172,9 +168,10 @@ def sphere_points(n):
 
 
 def lit(n, base, lo=0.62):
-    """Simple baked light from above and a little to one side, like the rest of the world."""
-    k = np.clip(n @ np.array([0.35, 0.85, 0.4]), -1, 1)
-    return base * (lo + (1 - lo) * (0.5 + 0.5 * k))[:, None]
+    """Baked light from above and a little to one side, in two flat tones: a lit side and a shaded side.
+    Two tones (and no speckle) is what keeps these shapes clean once the pixel pass snaps them to the palette."""
+    k = n @ np.array([0.35, 0.85, 0.4])
+    return base * np.where(k > 0.25, 1.0, lo)[:, None]
 
 
 def add_rock(out, x, z, r, tall):
@@ -187,7 +184,7 @@ def add_rock(out, x, z, r, tall):
     nrm = v / rad[None]
     nrm /= np.linalg.norm(nrm, axis=1, keepdims=True)
     c = ROCKS[rng.integers(len(ROCKS))]
-    col = lit(nrm, np.repeat(c[None], len(p), 0), 0.5) * (0.9 + 0.2 * rng.random(len(p)))[:, None]
+    col = lit(nrm, np.repeat(c[None], len(p), 0), 0.62)
     out.add(p, col, nrm, 0.075)
 
 
@@ -208,7 +205,7 @@ def tube_points(a, b, ra, rb, n):
 def add_branch_coral(out, x, z, h, colour):
     """Staghorn coral: thick branches fanning up from one base, paler toward the tips."""
     base = np.array([x, float(terr_h(x, z)) - 0.02, z])
-    tip_col = colour * 0.35 + 0.65
+    tip_col = colour * 0.7 + 0.3
     for _ in range(int(rng.integers(6, 10))):
         a = rng.uniform(0, 2 * np.pi)
         out_k = rng.uniform(0.25, 0.75)
@@ -385,16 +382,22 @@ def main():
         return k
 
     # 2. the lakebed, where the water sheet used to be
+    # The bed is group 6. Under water the shader draws it in flat bands of the lake's colours; the colour stored here only shows on wet sand at the waterline.
+    # The sway slot carries a flag instead: 1 where the bed is in something's shadow or weedy, which the shader draws one band darker.
+    def bed_dark(x, z, d):
+        weed = (n2(x * 0.9 + 40, z * 0.9 + 17) < 0.27) & (d > 0.3) & (d < 1.4)
+        return ((ground_shadow(x, z) < 0.8) | weed).astype(float)
+
     bn = terr_n(wx, wz)
-    bed = bed_col(wx, wz, d_new) * shade[:, None] * (0.8 + 0.2 * bn[:, 1])[:, None] * ground_shadow(wx, wz)[:, None]
-    new.add(np.stack([wx, WATER - d_new, wz], 1), bed, bn, 0.17)
+    bed = bed_col(wx, wz, d_new) * shade[:, None]
+    new.add(np.stack([wx, WATER - d_new, wz], 1), bed, bn, 0.2, sway=bed_dark(wx, wz, d_new), group=6)
     # the hole's walls are steep, so they need more splats than a flat sheet gives them
     n_extra = 26000
     a, q = rng.uniform(0, 2 * np.pi, n_extra), np.sqrt(rng.uniform(0.04, HOLE[0] + 0.06, n_extra))
     ex, ez = POND[0] + np.cos(a) * POND[2] * q, POND[1] + np.sin(a) * POND[3] * q
     ed = WATER - terr_h(ex, ez)
     en = terr_n(ex, ez)
-    new.add(np.stack([ex, WATER - ed, ez], 1), bed_col(ex, ez, ed) * (0.8 + 0.2 * en[:, 1])[:, None] * ground_shadow(ex, ez)[:, None], en, 0.19)
+    new.add(np.stack([ex, WATER - ed, ez], 1), bed_col(ex, ez, ed), en, 0.2, sway=bed_dark(ex, ez, ed), group=6)
 
     # 3. the surface layer: only ever drawn as foam or glints. Depth goes in the sway slot (square root keeps the shallows precise)
     keep = (d_new < 0.24) | (rng.random(len(wx)) < 0.09)
@@ -441,6 +444,7 @@ def main():
     # 6. palette: 24 colours fitted to the land and the characters, plus the lake's own eight. 32 in all (the pixel pass's limit).
     lake = (pond_f(pos[:, 0], pos[:, 2]) < ZONE) & (pos[:, 1] < WATER)
     land_c = col[~lake & (misc[:, 1] == 0), :3] / 255.0
+    land_c = np.vstack([land_c, np.repeat(SAND1[None], 400, 0), np.repeat(SAND2[None], 400, 0)])
     parts = [land_c[rng.choice(len(land_c), 12000, replace=False)]]
     for name, cnt in (("hero", 2600), ("calf", 1400)):
         c = skinned_colours(name)

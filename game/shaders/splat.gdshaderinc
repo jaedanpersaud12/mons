@@ -11,13 +11,23 @@ uniform int parents[16];   // each bone's parent: a splat blends between its bon
 uniform float snort = 9.0;
 #endif
 // ---- water ----
-// The water is not drawn. Anything below the waterline inside the lake is tinted by how deep it is, so the bed and what stands on it show through.
-uniform vec3 water_fx = vec3(1.0);            // see-through water on, caustics on, foam and glints on
-uniform vec4 wader = vec4(0.0);               // player x, z, unused, 1 while standing in water
+// The water is not drawn. Anything below the waterline inside the lake is recoloured by how deep it is, so the bed and what stands on it show through.
+uniform vec3 water_fx = vec3(1.0);            // see-through water on, light lines on, foam and glints on
+uniform vec4 wader = vec4(0.0);               // player x, z, radius of the foam collar, 1 while the player's body is in the water
 uniform vec4 pond = vec4(7.0, 6.0, 7.5, 5.0); // lake centre x, z and radii
 uniform float pond_zone = 1.5;
 uniform float water_y = -0.2;
 uniform float water_t = 0.0;
+uniform vec4 ripples[8];                      // rings spreading from where the player moved or landed: x, z, start time, strength
+uniform vec4 splash = vec4(0.0);              // droplets thrown up: x, z, start time, strength
+
+// The lake's own palette colours (the same eight that tools/bake_water.py puts in palette.json). Writing them out exactly keeps the pixel pass from dithering them.
+const vec3 W_NAVY = vec3(0.031, 0.173, 0.408);
+const vec3 W_BLUE = vec3(0.078, 0.376, 0.588);
+const vec3 W_SLATE = vec3(0.173, 0.329, 0.408);
+const vec3 W_TEAL = vec3(0.204, 0.549, 0.588);
+const vec3 W_AQUA = vec3(0.408, 0.769, 0.729);
+const vec3 W_PALE = vec3(0.627, 0.871, 0.800);
 
 float pond_r(vec2 w) { vec2 q = (w - pond.xy) / pond.zw; return dot(q, q); }
 
@@ -26,6 +36,57 @@ float water_lap(vec2 w, float t) {
 	return max(0.004, 0.034 + 0.028 * sin(t * 0.9 + w.x * 0.6 + w.y * 0.45) + 0.012 * sin(t * 1.7 + w.x * 1.9 - w.y * 1.3));
 }
 
+// thin moving lines of light on the surface: 1 on a line, 0 off it
+float water_lines(vec2 w, float t) {
+	vec2 q = w * 2.6;
+	float ca = sin(q.x * 1.3 + 1.4 * sin(q.y * 1.1 + t * 0.7) + t * 0.5) + sin(q.y * 1.5 + 1.4 * sin(q.x * 0.9 - t * 0.6) - t * 0.35) + sin((q.x + q.y) * 0.9 + 1.2 * sin((q.x - q.y) * 0.8 + t * 0.5));
+	return step(0.955, 1.0 - abs(ca) / 3.0) * water_fx.y;
+}
+
+// rings spreading across the surface: 1 on a ring, 0 off it
+float water_rings(vec2 w, float t) {
+	float v = 0.0;
+	for (int i = 0; i < 8; i++) {
+		float age = t - ripples[i].z;
+		if (ripples[i].w > 0.0 && age > 0.0 && age < 2.0) {
+			float r = length(w - ripples[i].xy), rad = 0.22 + age * 1.15;
+			float life = ripples[i].w * (1.0 - age / 2.0);
+			v = max(v, (1.0 - smoothstep(0.0, 0.035 + 0.03 * life, abs(r - rad))) * step(0.25, life));
+			v = max(v, (1.0 - smoothstep(0.0, 0.03, abs(r - rad * 0.55))) * step(0.55, life));   // a second, inner ring while it is fresh
+		}
+	}
+	return v;
+}
+
+// what the surface does to this spot: 0 nothing, 1 a light line or ring lies over it
+float water_top(vec2 w, float wd, float t) {
+	return max(water_lines(w, t) * (1.0 - smoothstep(1.0, 1.7, wd)) * smoothstep(0.02, 0.1, wd), water_rings(w, t));
+}
+
+// The lakebed. It is drawn in flat bands of the lake's own colours, one per depth, so it stays clean after the pixel pass.
+// dark is 1 where the bed is in shadow or weedy: those spots take the next colour down.
+vec3 bed_tint(vec3 c, vec3 p, float dark) {
+	vec2 w = p.xz; float t = water_t;
+	if (pond_r(w) > pond_zone) { return c; }
+	float rest = water_y - p.y;
+	if (rest <= 0.0) { return c; }
+	float wd = rest - water_lap(w, t);
+	if (wd <= 0.0) { return c * mix(0.9, 0.74, smoothstep(0.0, 0.05, rest)); }   // just uncovered: wet sand
+	if (water_fx.x < 0.5) {
+		return mix(vec3(0.525, 0.839, 0.824), vec3(0.184, 0.525, 0.678), clamp(wd / 0.38, 0.0, 1.0)) * (0.84 + 0.1 * sin(t * 2.1 + w.x * 3.1 + w.y * 2.3));
+	}
+	float e = wd + 0.05 * sin(w.x * 2.3 + w.y * 1.7) + 0.03 * sin(w.x * 5.1 - w.y * 4.3);   // a wandering edge between bands
+	float band = e < 0.16 ? 0.0 : (e < 1.25 ? 1.0 : (e < 1.9 ? 2.0 : (e < 2.6 ? 3.0 : 4.0)));
+	band += step(0.5, dark);
+	band -= water_top(w, wd, t);
+	if (band < 0.5) { return W_PALE; }
+	if (band < 1.5) { return W_AQUA; }
+	if (band < 2.5) { return W_TEAL; }
+	if (band < 3.5) { return W_BLUE; }
+	return W_NAVY;
+}
+
+// Everything else under water: rocks, corals, plants, legs.
 vec3 water_tint(vec3 c, vec3 p) {
 	vec2 w = p.xz; float t = water_t;
 	if (pond_r(w) > pond_zone) { return c; }
@@ -37,26 +98,15 @@ vec3 water_tint(vec3 c, vec3 p) {
 		// the old look: a flat blue that hides everything
 		return mix(vec3(0.525, 0.839, 0.824), vec3(0.184, 0.525, 0.678), clamp(wd / 0.38, 0.0, 1.0)) * (0.84 + 0.1 * sin(t * 2.1 + w.x * 3.1 + w.y * 2.3));
 	}
-	// Under water a thing keeps its own colour but the water's colour lies over it like a veil: thin at the surface, thicker with depth.
+	// A thing keeps its own colour but the water's colour lies over it like a veil: thin at the surface, thicker with depth.
 	// Mixing toward one colour (and not absorbing each channel) is what keeps a pink coral pink and a dark rock dark, so shapes stay readable.
 	c.r *= exp(-0.5 * wd);                                   // red still fades first
 	c *= 1.0 - 0.45 * smoothstep(0.9, 3.0, wd);              // and everything dims in deep water
-	vec3 body = mix(vec3(0.20, 0.74, 0.80), vec3(0.02, 0.13, 0.40), smoothstep(0.35, 2.6, wd));
+	vec3 body = mix(vec3(0.20, 0.74, 0.80), W_NAVY, smoothstep(0.35, 2.6, wd));
 	float veil = 0.16 + 0.5 * (1.0 - exp(-wd * 0.8));
 	vec3 col = mix(c, body, veil);
-	// The surface: a net of light lines that sits at the same place whatever is under it, so it reads as lying on top.
-	vec2 q = w * 2.6;
-	float ca = sin(q.x * 1.3 + 1.4 * sin(q.y * 1.1 + t * 0.7) + t * 0.5) + sin(q.y * 1.5 + 1.4 * sin(q.x * 0.9 - t * 0.6) - t * 0.35) + sin((q.x + q.y) * 0.9 + 1.2 * sin((q.x - q.y) * 0.8 + t * 0.5));
-	ca = pow(1.0 - abs(ca) / 3.0, 9.0) * water_fx.y;
-	col += vec3(0.15, 0.19, 0.17) * ca * (0.3 + 0.7 * exp(-wd * 0.5)) * smoothstep(0.0, 0.08, wd);
-	// slow light bands across the surface
-	col *= 1.0 + 0.05 * sin(w.x * 1.1 + w.y * 0.7 + t * 0.8) * sin(w.x * 0.5 - w.y * 1.3 - t * 0.6);
-	// rings around the player while wading
-	if (wader.w > 0.5) {
-		float r = length(w - wader.xy), ring = sin(r * 15.0 - t * 7.0) * (1.0 - smoothstep(0.25, 1.7, r)) * smoothstep(0.05, 0.3, r);
-		col += vec3(0.2, 0.24, 0.24) * max(ring, 0.0);
-	}
-	return col;
+	// light lines and rings on the surface lie over it too, in the same place as they do on the bed around it
+	return mix(col, W_PALE, 0.55 * water_top(w, wd, t));
 }
 
 varying flat vec4 v_col;
@@ -88,6 +138,26 @@ void vertex() {
 		p = q2;
 	}
 #else
+	float bed_dark = 0.0;
+	if (g == 6.0) { bed_dark = sw; sw = 0.0; }   // the lakebed keeps its shadow flag where other splats keep sway
+	if (g == 7.0) {
+		// Water effects that follow the player: a broken collar of foam where the body meets the surface, and droplets from a splash.
+		float a = c.r * 6.2832, rnd = c.b; bool droplet = c.g > 0.5;
+		sw = 0.0; c = vec4(0.97, 0.99, 1.0, 0.0);
+		if (!droplet) {
+			if (wader.w < 0.5 || fract(rnd * 7.0 + water_t * 0.8) < 0.4) { kill = true; }
+			float rad = wader.z * (0.92 + 0.16 * rnd + 0.08 * sin(water_t * 4.0 + a * 3.0));
+			p = vec3(wader.x + cos(a) * rad, water_y + 0.012, wader.y + sin(a) * rad);
+			size = 0.075;
+		} else {
+			float age = water_t - splash.z;
+			if (splash.w <= 0.0 || age < 0.0 || age > 0.8) { kill = true; }
+			float out_v = (0.35 + 0.9 * rnd) * splash.w, up_v = (1.7 + 1.7 * fract(rnd * 13.7)) * splash.w;
+			p = vec3(splash.x + cos(a) * (0.12 + out_v * age), water_y + up_v * age - 5.5 * age * age, splash.y + sin(a) * (0.12 + out_v * age));
+			if (p.y < water_y - 0.02) { kill = true; }
+			size = 0.07 * (1.0 - age * 0.7);
+		}
+	}
 	if (g == 5.0) {
 		// The surface layer. Inside the lake these splats are only ever foam or glints; the rest of the time they are not drawn.
 		float d = sw * sw * 3.0, t = water_t; vec2 w = p.xz;
@@ -100,14 +170,14 @@ void vertex() {
 			if (water_fx.z > 0.5 && water_fx.x > 0.5) {
 				// glints: a few splats flash white along the bright bands
 				float band = sin(w.x * 1.1 + w.y * 0.7 + t * 0.8) * sin(w.x * 0.5 - w.y * 1.3 - t * 0.6);
-				float pick = step(0.5, fract(ph * 91.7)), tw = fract(ph * 7.31 + t * 0.33);
+				float pick = step(0.72, fract(ph * 91.7)), tw = fract(ph * 7.31 + t * 0.33);
 				float gli = pick * smoothstep(0.0, 0.04, tw) * (1.0 - smoothstep(0.07, 0.13, tw)) * smoothstep(0.0, 0.5, band) * smoothstep(0.1, 0.24, d);
 				// foam: a solid line at the waterline, a broken one trailing behind it
 				float br = 0.5 + 0.5 * sin(w.x * 7.0 + w.y * 5.0 + t * 1.3) * sin(w.x * 3.1 - w.y * 6.3 - t * 0.9);
 				float f1 = 1.0 - smoothstep(0.004, 0.034, abs(s - 0.012) + 0.012 * br);
 				float f2 = (1.0 - smoothstep(0.0, 0.014, abs(s - 0.085 - 0.03 * sin(t * 0.6 + w.x * 0.8 + w.y * 0.5)))) * smoothstep(0.6, 0.85, br) * step(0.45, fract(ph * 53.3));
 				show = max(gli, max(f1, f2));
-				if (gli > max(f1, f2)) { size *= 0.4; }   // a glint is a pinprick, foam is a full splat
+				if (gli > max(f1, f2)) { size *= 0.3; }   // a glint is a pinprick, foam is a full splat
 			}
 			if (show < 0.5) { kill = true; }
 			c.rgb = vec3(0.97, 0.99, 1.0);
@@ -118,13 +188,14 @@ void vertex() {
 		p.x += sw * w * 0.09; c.rgb *= 1.0 + sw * w * 0.07; p.z += sw * cos(wind_t * 1.2 + p.z * 0.8 + ph * 5.0) * 0.05; p.y += sw * sin(wind_t * 1.9 + ph * 9.0) * 0.015;
 	}
 	// refraction: things under the water shimmer a little, more the deeper they are
-	if (g != 5.0 && water_fx.x > 0.5) {
+	if (g != 5.0 && g != 7.0 && water_fx.x > 0.5) {
 		float uw = water_y - p.y;
 		if (uw > 0.03 && pond_r(p.xz) < pond_zone) {
 			float k = min(uw, 0.7) * 0.03;
 			p.x += k * sin(water_t * 1.7 + p.z * 3.1 + p.x * 1.3); p.z += k * cos(water_t * 1.4 + p.x * 2.7 - p.z * 1.1);
 		}
 	}
+	float lum0 = dot(c.rgb, vec3(1.0));
 	if (c.a < 0.5) {
 		for (int i = 0; i < 4; i++) {
 			if (sh_b[i].z > 0.0) {
@@ -138,7 +209,8 @@ void vertex() {
 #ifdef CREATURE
 	if (c.a < 0.5) { c.rgb = water_tint(c.rgb, p); }   // legs in the water
 #else
-	if (g != 5.0 && c.a < 0.5) { c.rgb = water_tint(c.rgb, p); }
+	if (g == 6.0) { c.rgb = bed_tint(c.rgb, p, max(bed_dark, step(dot(c.rgb, vec3(1.0)), lum0 * 0.88))); }
+	else if (g != 5.0 && g != 7.0 && c.a < 0.5) { c.rgb = water_tint(c.rgb, p); }
 #endif
 	vec4 vc = MODELVIEW_MATRIX * vec4(p, 1.0);
 	float R = 0.5 * size * size_mul;

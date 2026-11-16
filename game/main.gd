@@ -35,7 +35,16 @@ var dbg := 0
 var auto_walk := 0.0
 var force: PackedFloat64Array = []   # test hook: amt, stride place, air, facing
 var simple := 0
-var water_fx := Vector3(1, 1, 1)   # new water, caustics, foam and glints
+var water_fx := Vector3(1, 1, 1)   # see-through water, light lines, foam and glints
+# ---- the player in water ----
+const FLOAT_AT := 0.95            # water deeper than this and the player floats: about shoulder height
+var rip: Array[Vector4] = []      # rings on the surface: x, z, start time, strength
+var rip_i := 0
+var rip_cd := 0.0
+var splash := Vector4.ZERO        # droplets: x, z, start time, strength
+var was_wet := false
+var auto_dir := []                # test hook: walk in a fixed direction
+var hop_at := -1                  # test hook: jump on this frame
 var start_at := []
 
 # ---- the calf ----
@@ -74,11 +83,16 @@ func _ready() -> void:
 		if a.begins_with("--at="):
 			for v in a.substr(5).split(","): start_at.append(float(v))
 		if a == "--oldwater": water_fx.x = 0.0
+		if a.begins_with("--hop="): hop_at = int(a.substr(6))
+		if a.begins_with("--walk="):
+			for v in a.substr(7).split(","): auto_dir.append(float(v))
 	var t0 := Time.get_ticks_msec()
 	_setup_viewports()
 	_load_world()
 	_load_calf()
 	_load_hero()
+	_make_water_fx()
+	for i in 8: rip.append(Vector4.ZERO)
 	if start_at.size() == 2:
 		pl.x = start_at[0]; pl.z = start_at[1]; pl.y = height(pl.x, pl.z); cam_t = Vector3(pl.x, pl.y + 0.9, pl.z)
 	var pond: Array = meta.get("pond", [7.0, 6.0, 7.5, 5.0])
@@ -377,15 +391,19 @@ func _process(dt: float) -> void:
 	if Input.is_key_pressed(KEY_W): mv.y -= 1.0
 	if Input.is_key_pressed(KEY_S): mv.y += 1.0
 	if auto_walk > 0.0: mv = Vector2(sin(t_now * 0.5), cos(t_now * 0.5))
+	if auto_dir.size() == 2: mv = Vector2(auto_dir[0], auto_dir[1])
 	var mx := cos(cam_yaw) * mv.x + sin(cam_yaw) * mv.y; var mz := -sin(cam_yaw) * mv.x + cos(cam_yaw) * mv.y
-	_step_player(dt, mx, mz, Input.is_key_pressed(KEY_SHIFT) or auto_walk > 1.0, Input.is_key_pressed(KEY_SPACE))
+	_step_player(dt, mx, mz, Input.is_key_pressed(KEY_SHIFT) or auto_walk > 1.0, Input.is_key_pressed(KEY_SPACE) or frame_n == hop_at)
 	if force.size() == 4: pl.amt = force[0]; pl.phase = force[1] * TAU; pl.air = force[2]; pl.jy = force[2] * 0.5; pl.yaw = force[3]; pl.vx = 0.0; pl.vz = 0.0
 	_step_calf(dt); _pose_calf(t_now); _pose_hero(t_now)
 	_set_param(world_mats, "wind_t", wind_t)
 	var wet := world_mats + crit_mats + hero_mats   # everything that can be under water
 	_set_param(wet, "water_t", wind_t)
 	_set_param(wet, "water_fx", water_fx)
-	_set_param(wet, "wader", Vector4(pl.x, pl.z, 0.0, 1.0 if height(pl.x, pl.z) < float(meta["water"]) + 0.02 and pl.jy < 0.05 else 0.0))
+	var body_wet: bool = water_depth(pl.x, pl.z) > 0.1 and pl.y + pl.jy < float(meta["water"]) - 0.08   # the body, not just the feet, is in the water
+	_set_param(wet, "wader", Vector4(pl.x, pl.z, 0.27, 1.0 if body_wet else 0.0))
+	_set_param(world_mats, "ripples", rip)
+	_set_param(world_mats, "splash", splash)
 	# camera: follows the player with a little lead, eases to a stop, pulls back when running. Q and E turn, the wheel zooms
 	if Input.is_key_pressed(KEY_Q): cam_yaw -= dt * 1.6
 	if Input.is_key_pressed(KEY_E): cam_yaw += dt * 1.6
@@ -404,7 +422,7 @@ func _process(dt: float) -> void:
 			if fps < 55.0 and detail > 0.75: detail = 0.5; _apply_detail(); ft_hold = 8.0
 			elif fps > 110.0 and detail < 0.75: detail = 1.0; _apply_detail(); ft_hold = 8.0
 		var drawn: int = world_total[0] + (world_total[1] if detail > 0.75 else 0)
-		fps_label.text = "%d fps  %.1f ms   %s detail%s   %s   %.2fM world splats   %d draw calls\n1/2 detail   G auto detail   B blend   P palette   3 clear water   4 caustics   5 foam   WASD walk   Shift run   Space jump   Q/E turn" % [
+		fps_label.text = "%d fps  %.1f ms   %s detail%s   %s   %.2fM world splats   %d draw calls\n1/2 detail   G auto detail   B blend   P palette   3 clear water   4 light lines   5 foam   WASD walk   Shift run   Space jump   Q/E turn" % [
 			Engine.get_frames_per_second(), 1000.0 / maxf(fps, 0.01), "full" if detail > 0.75 else "half", " (auto)" if auto_detail else "", "soft blend" if blend else "opaque", drawn / 1000000.0,
 			RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME)]
 	if shot_path != "" and frame_n == shot_frame:
@@ -448,15 +466,48 @@ func _kf(K: Array, c: float) -> float:
 	return (2 * u3 - 3 * u2 + 1) * b.y + (u3 - 2 * u2 + u) * m0 + (-2 * u3 + 3 * u2) * d.y + (u3 - u2) * m1
 
 func _blocked(x: float, z: float) -> bool:
-	return height(x, z) < float(meta["water"]) - 0.3 or pow(absf(x / 24.0), 3.2) + pow(absf(z / 20.0), 3.2) > 0.9
+	return pow(absf(x / 24.0), 3.2) + pow(absf(z / 20.0), 3.2) > 0.9   # only the island's edge stops you now: water you wade or float through
+
+func water_depth(x: float, z: float) -> float:
+	# how deep the lake is here; 0 on land
+	var pond: Array = meta.get("pond", [7.0, 6.0, 7.5, 5.0])
+	var qx: float = (x - pond[0]) / pond[2]; var qz: float = (z - pond[1]) / pond[3]
+	if qx * qx + qz * qz > float(meta.get("pond_zone", 1.5)): return 0.0
+	return maxf(0.0, float(meta["water"]) - height(x, z))
+
+func _ripple(x: float, z: float, strength: float) -> void:
+	rip[rip_i] = Vector4(x, z, wind_t, strength); rip_i = (rip_i + 1) % 8
+
+func _splash(x: float, z: float, strength: float) -> void:
+	splash = Vector4(x, z, wind_t, strength); _ripple(x, z, 1.0)
+
+func _make_water_fx() -> void:
+	# One small mesh of loose splats for the foam collar round the player and for splash droplets. The shader places them (group 7).
+	var n := 150
+	var pos := PackedVector3Array(); pos.resize(n)
+	var misc := PackedFloat32Array(); misc.resize(n * 4)
+	var col := PackedFloat32Array(); col.resize(n * 4)
+	var nrm := PackedFloat32Array(); nrm.resize(n * 4)
+	for i in n:
+		var droplet := i >= 70
+		misc[i * 4] = 0.0; misc[i * 4 + 1] = 7.0 / 255.0; misc[i * 4 + 2] = 18.0 / 255.0; misc[i * 4 + 3] = randf()
+		col[i * 4] = randf() if droplet else float(i) / 70.0   # angle round the player
+		col[i * 4 + 1] = 1.0 if droplet else 0.0
+		col[i * 4 + 2] = randf()
+	_add_mesh(_points_mesh(pos, misc, col, nrm), world_mats[0], AABB(Vector3(-200, -50, -200), Vector3(400, 100, 400)))
 
 func _step_player(dt: float, mx: float, mz: float, run: bool, jump: bool) -> void:
 	dt = maxf(dt, 0.001)
-	var l := Vector2(mx, mz).length(); var top := 5.8 if run else 3.5
+	# Water: the deeper you stand, the slower you go. Past shoulder depth your feet leave the bottom and you float.
+	var wl := float(meta["water"])
+	var depth := water_depth(pl.x, pl.z)
+	var floating := depth > FLOAT_AT
+	var sub := clampf(depth / FLOAT_AT, 0.0, 1.0) if pl.jy < 0.3 else 0.0   # how much of the body the water is holding back
+	var l := Vector2(mx, mz).length(); var top := (5.8 if run else 3.5) * (1.0 - 0.55 * sub * sub - (0.1 if floating else 0.0))
 	var tx := 0.0; var tz := 0.0
 	if l > 0.0001: tx = mx / l * top; tz = mz / l * top
 	# ease toward the wanted velocity: quick to start, a short slide to stop
-	var dv := Vector2(tx - pl.vx, tz - pl.vz); var sv := (26.0 if l > 0.0001 else 20.0) * dt
+	var dv := Vector2(tx - pl.vx, tz - pl.vz); var sv := (26.0 if l > 0.0001 else 20.0) * dt * (1.0 - 0.6 * sub)   # water also makes you slow to start and slow to stop
 	if dv.length() <= sv: pl.vx = tx; pl.vz = tz
 	else: dv = dv.normalized() * sv; pl.vx += dv.x; pl.vz += dv.y
 	var nx: float = pl.x + pl.vx * dt; var nz: float = pl.z + pl.vz * dt
@@ -469,13 +520,28 @@ func _step_player(dt: float, mx: float, mz: float, run: bool, jump: bool) -> voi
 	var dy := 0.0
 	if sp > 0.3: dy = wrapf(atan2(pl.vx, pl.vz) - pl.yaw, -PI, PI) * minf(1.0, dt * 13.0); pl.yaw += dy
 	pl.dyaw += (dy / dt - pl.dyaw) * minf(1.0, dt * 4.0)
-	pl.y = height(pl.x, pl.z)
-	if jump and pl.jy <= 0.0: pl.vy = 5.4
+	depth = water_depth(pl.x, pl.z)
+	var ground := height(pl.x, pl.z)
+	var afloat := wl - FLOAT_AT + 0.035 * sin(t_now * 2.1) + 0.02 * sin(t_now * 3.7)   # where the feet hang when floating, bobbing a little
+	var target_y := maxf(ground, afloat) if depth > 0.0 else ground
+	pl.y = target_y if absf(target_y - pl.y) > 1.0 else lerpf(pl.y, target_y, minf(1.0, dt * (6.0 if target_y > ground else 14.0)))   # ease on and off the bottom
+	if jump and pl.jy <= 0.0: pl.vy = 5.4 * (1.0 - 0.6 * sub)                         # a jump out of deep water is barely a hop
 	var was: bool = pl.jy > 0.0
 	pl.vy -= 17.0 * dt; pl.jy += pl.vy * dt
 	if pl.jy <= 0.0:
 		pl.jy = 0.0; pl.vy = 0.0
-		if was: pl.land = 1.0
+		if was:
+			pl.land = 1.0
+			if depth > 0.05: _splash(pl.x, pl.z, clampf(0.55 + depth, 0.6, 1.3))             # landing in water
+	# rings and splashes
+	var wet_now: bool = depth > 0.04 and pl.jy < 0.05
+	var sp_now := Vector2(pl.vx, pl.vz).length()
+	if wet_now and not was_wet and sp_now > 2.0: _splash(pl.x, pl.z, clampf(sp_now / 5.0, 0.5, 1.0))   # running in from the shore
+	was_wet = wet_now
+	rip_cd -= dt
+	if wet_now and rip_cd <= 0.0:
+		if sp_now > 0.4: _ripple(pl.x, pl.z, clampf(0.55 + sp_now / 6.0, 0.6, 1.0)); rip_cd = lerpf(0.42, 0.2, clampf(sp_now / 4.0, 0.0, 1.0))
+		else: _ripple(pl.x, pl.z, 0.5); rip_cd = 1.5                                         # standing still: a slow ring now and then
 	pl.air += ((1.0 if pl.jy > 0.02 else 0.0) - pl.air) * minf(1.0, dt * 16.0)
 	pl.land = maxf(0.0, pl.land - dt / 0.26)
 	pl.amt += (minf(1.4, sp / 3.5) - pl.amt) * minf(1.0, dt * 10.0)
